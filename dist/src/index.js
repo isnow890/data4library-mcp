@@ -3,14 +3,27 @@ import * as dotenv from "dotenv";
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+import { readFileSync } from "node:fs";
 import { LibraryApiClient } from "./clients/library-api.client.js";
 import * as schemas from "./schemas/book.schema.js";
 import { createBookToolHandlers } from "./handlers/book.handler.js";
 import { createValidatedTools } from "./schemas/tool.schema.js";
 // 환경 변수 로드
 dotenv.config();
-const require = createRequire(import.meta.url);
-const package_json = require("../../package.json");
+// package.json 로드 (import.meta 대신 파일 시스템 사용)
+let package_json;
+try {
+    const require = createRequire(import.meta.url);
+    package_json = require("../../package.json");
+}
+catch {
+    // fallback for bundled environments
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    package_json = JSON.parse(readFileSync(join(__dirname, "../../package.json"), "utf-8"));
+}
 // 환경 변수 설정
 const API_KEY = process.env.LIBRARY_API_KEY;
 const API_BASE_URL = "http://data4library.kr";

@@ -4,14 +4,26 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { REGION_CODES, KDC_SUBJECT_CODES, DETAILED_KDC_CODES, DETAILED_REGION_CODES, type RegionCode, type SubjectCode, type DetailedKDCCode, type DetailedRegionCode } from "../constants/codes.js";
 
-// 현재 파일의 디렉토리 경로 얻기
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// 현재 파일의 디렉토리 경로 얻기 (fallback 포함)
+let __filename: string;
+let __dirname: string;
+let libraries: any[];
 
-
-// 도서관 정보를 담은 JSON 파일 로드
-const librariesPath = join(__dirname, "..", "data", "libraries.json");
-const libraries = JSON.parse(readFileSync(librariesPath, "utf-8"));
+try {
+  __filename = fileURLToPath(import.meta.url);
+  __dirname = dirname(__filename);
+  // 도서관 정보를 담은 JSON 파일 로드
+  const librariesPath = join(__dirname, "..", "data", "libraries.json");
+  libraries = JSON.parse(readFileSync(librariesPath, "utf-8"));
+} catch {
+  // fallback for bundled environments
+  __dirname = process.cwd();
+  try {
+    libraries = JSON.parse(readFileSync(join(__dirname, "data", "libraries.json"), "utf-8"));
+  } catch {
+    libraries = []; // 최종 fallback
+  }
+}
 
 export interface LibraryApiConfig {
   apiKey: string;
