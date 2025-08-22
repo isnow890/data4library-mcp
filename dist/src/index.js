@@ -2,27 +2,26 @@
 import * as dotenv from "dotenv";
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { LibraryApiClient } from "./clients/library-api.client.js";
 import * as schemas from "./schemas/book.schema.js";
 import { createBookToolHandlers } from "./handlers/book.handler.js";
 import { createValidatedTools } from "./schemas/tool.schema.js";
 // 환경 변수 로드
 dotenv.config();
-// package.json 로드 (import.meta 대신 파일 시스템 사용)
+// package.json 로드 (bundled environment 호환)
 let package_json;
 try {
-    const require = createRequire(import.meta.url);
-    package_json = require("../../package.json");
+    // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
+    package_json = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
 }
 catch {
-    // fallback for bundled environments
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    package_json = JSON.parse(readFileSync(join(__dirname, "../../package.json"), "utf-8"));
+    // fallback: 기본 정보 제공
+    package_json = {
+        name: "data4library-mcp",
+        version: "1.0.0"
+    };
 }
 // 환경 변수 설정
 const API_KEY = process.env.LIBRARY_API_KEY;
