@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "FastMCP-powered Book Information MCP Server using 도서관정보나루 (Library Information Gateway) API - Search Korean public libraries, books, popular titles, and library statistics",
   "main": "dist/src/index.js",
-  "module": "./src/index.ts",
   "types": "dist/src/index.d.ts",
   "files": [
     "dist",

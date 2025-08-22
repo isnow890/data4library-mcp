@@ -1,23 +1,14 @@
 import axios from "axios";
 import { readFileSync } from "fs";
-import { join } from "path";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
 import { REGION_CODES, KDC_SUBJECT_CODES, DETAILED_KDC_CODES, DETAILED_REGION_CODES } from "../constants/codes.js";
-// 도서관 정보를 담은 JSON 파일 로드 (bundled environment 호환)
-let libraries;
-try {
-    // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
-    libraries = JSON.parse(readFileSync(join(process.cwd(), "data", "libraries.json"), "utf-8"));
-}
-catch {
-    try {
-        // 개발 환경에서는 dist 폴더 기준으로 찾기
-        libraries = JSON.parse(readFileSync(join(process.cwd(), "dist", "src", "data", "libraries.json"), "utf-8"));
-    }
-    catch {
-        // 최종 fallback: 빈 배열
-        libraries = [];
-    }
-}
+// 현재 파일의 디렉토리 경로 얻기
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// 도서관 정보를 담은 JSON 파일 로드
+const librariesPath = join(__dirname, "..", "data", "libraries.json");
+const libraries = JSON.parse(readFileSync(librariesPath, "utf-8"));
 /**
  * 도서관 정보 API 클라이언트
  */

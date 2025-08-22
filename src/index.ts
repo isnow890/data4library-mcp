@@ -3,8 +3,6 @@
 import * as dotenv from "dotenv";
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { LibraryApiClient } from "./clients/library-api.client.js";
 import * as schemas from "./schemas/book.schema.js";
@@ -13,19 +11,6 @@ import { createValidatedTools, type McpTool } from "./schemas/tool.schema.js";
 
 // 환경 변수 로드
 dotenv.config();
-
-// package.json 로드 (bundled environment 호환)
-let package_json;
-try {
-  // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
-  package_json = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
-} catch {
-  // fallback: 기본 정보 제공
-  package_json = {
-    name: "data4library-mcp",
-    version: "1.0.0"
-  };
-}
 
 // 환경 변수 설정
 const API_KEY = process.env.LIBRARY_API_KEY;
@@ -52,8 +37,8 @@ if (!API_KEY) {
 
 // FastMCP 서버 인스턴스 생성
 const server = new FastMCP({
-  name: "Book Information MCP",
-  version: package_json.version,
+  name: "Data4Library MCP",
+  version: "1.0.0",
 });
 
 function toolFn(name: string, fn: (data: any, ctx?: any) => Promise<any>) {
