@@ -3,15 +3,13 @@ FROM node:22.12-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and source code
 COPY package*.json ./
 COPY tsconfig.json ./
+COPY src/ ./src/
 
 # Install all dependencies (including devDependencies for build)
-RUN --mount=type=cache,target=/root/.npm npm install
-
-# Copy source code
-COPY src/ ./src/
+RUN --mount=type=cache,target=/root/.npm npm install --ignore-scripts
 
 # Build the application
 RUN npm run build

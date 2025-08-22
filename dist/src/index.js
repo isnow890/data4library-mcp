@@ -2,15 +2,27 @@
 import * as dotenv from "dotenv";
 import { FastMCP } from "fastmcp";
 import { z } from "zod";
-import { createRequire } from "node:module";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { LibraryApiClient } from "./clients/library-api.client.js";
 import * as schemas from "./schemas/book.schema.js";
 import { createBookToolHandlers } from "./handlers/book.handler.js";
 import { createValidatedTools } from "./schemas/tool.schema.js";
 // 환경 변수 로드
 dotenv.config();
-const require = createRequire(import.meta.url);
-const package_json = require("../../package.json");
+// package.json 로드 (bundled environment 호환)
+let package_json;
+try {
+    // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
+    package_json = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
+}
+catch {
+    // fallback: 기본 정보 제공
+    package_json = {
+        name: "data4library-mcp",
+        version: "1.0.0"
+    };
+}
 // 환경 변수 설정
 const API_KEY = process.env.LIBRARY_API_KEY;
 const API_BASE_URL = "http://data4library.kr";
@@ -20,16 +32,15 @@ const debugStats = {
     sessionCalls: 0,
     startTime: Date.now(),
 };
-// 환경 변수 유효성 검사
-if (!API_KEY) {
-    console.error("Error: LIBRARY_API_KEY environment variable is required");
-    process.exit(1);
-}
-// API 클라이언트 초기화
+// API 클라이언트 초기화 (API 키가 없어도 일부 기능 제한적으로 작동)
 const client = new LibraryApiClient({
-    apiKey: API_KEY,
+    apiKey: API_KEY || "",
     baseUrl: API_BASE_URL,
 });
+// API 키가 없는 경우 경고 메시지
+if (!API_KEY) {
+    console.error("Warning: LIBRARY_API_KEY not provided. Running with limited functionality.");
+}
 // FastMCP 서버 인스턴스 생성
 const server = new FastMCP({
     name: "Book Information MCP",

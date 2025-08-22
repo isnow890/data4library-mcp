@@ -1,14 +1,23 @@
 import axios from "axios";
 import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
+import { join } from "path";
 import { REGION_CODES, KDC_SUBJECT_CODES, DETAILED_KDC_CODES, DETAILED_REGION_CODES } from "../constants/codes.js";
-// 현재 파일의 디렉토리 경로 얻기
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-// 도서관 정보를 담은 JSON 파일 로드
-const librariesPath = join(__dirname, "..", "data", "libraries.json");
-const libraries = JSON.parse(readFileSync(librariesPath, "utf-8"));
+// 도서관 정보를 담은 JSON 파일 로드 (bundled environment 호환)
+let libraries;
+try {
+    // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
+    libraries = JSON.parse(readFileSync(join(process.cwd(), "data", "libraries.json"), "utf-8"));
+}
+catch {
+    try {
+        // 개발 환경에서는 dist 폴더 기준으로 찾기
+        libraries = JSON.parse(readFileSync(join(process.cwd(), "dist", "src", "data", "libraries.json"), "utf-8"));
+    }
+    catch {
+        // 최종 fallback: 빈 배열
+        libraries = [];
+    }
+}
 /**
  * 도서관 정보 API 클라이언트
  */
@@ -32,6 +41,10 @@ export class LibraryApiClient {
      * GET 요청
      */
     async get(url, params = {}) {
+        // API 키가 없는 경우 에러 처리
+        if (!this.apiKey) {
+            throw new Error("API 키가 설정되지 않았습니다. LIBRARY_API_KEY 환경변수를 설정해주세요.");
+        }
         // API 키와 JSON 형식 요청 추가
         params.authKey = this.apiKey;
         params.format = 'json';
