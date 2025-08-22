@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://firebasestorage.googleapis.com/v0/b/rottenbridge-e6efa.appspot.com/o/logo.jpg?alt=media&token=68d16fd2-799f-4aba-8c1e-da6977e2949e" alt="Data4Library MCP Server Logo" width="200"/>
+  <img src="https://firebasestorage.googleapis.com/v0/b/rottenbridge-e6efa.appspot.com/o/logo.jpg?alt=media&token=68d16fd2-799f-4aba-8c1e-da6977e2949e" alt="Data4Library MCP Server Logo" width="300"/>
 </div>
 
 # 📚 Data4Library MCP Server
@@ -22,6 +22,7 @@
 ## 🎯 Key Features (25 Tools)
 
 ### 📚 Library & Book Search
+
 - **🏛️ Nationwide Public Library Search** (`search_libraries`): Search by region, library name
 - **📖 Comprehensive Book Search** (`search_books`): Search by title, author, publisher, subject
 - **🔍 Library Holdings Search** (`search_libraries_by_book`): Find libraries that hold specific books
@@ -29,6 +30,7 @@
 - **✅ Loan Availability** (`check_book_availability`): Real-time loan availability status
 
 ### 📊 Popular Books & Trend Analysis
+
 - **🔥 Popular Loan Books** (`search_popular_books`): National/regional bestsellers
 - **🏆 Library-specific Popular Books** (`search_popular_books_by_library`): Popular books at specific libraries
 - **📈 Trending Books** (`get_hot_trend`): Real-time trending book queries
@@ -36,50 +38,61 @@
 - **🏷️ Monthly Keywords** (`get_monthly_keywords`): Reading trend keywords
 
 ### 📈 Statistics & Analytics Tools
+
 - **📊 Loan/Return Trends** (`get_usage_trend`): Library usage statistics graphs
 - **🌍 Regional Reading Volume** (`get_reading_quantity`): Reading rate and volume comparison
 - **📚 Collection/Loan Data** (`search_items`): Detailed library statistics
 - **📖 Book Usage Analysis** (`get_book_usage_analysis`): Usage patterns for specific books
 
 ### 🎯 Personalized Recommendation System
+
 - **🎓 Expert Recommendations** (`get_mania_recommendations`): Advanced books for specialists
 - **📚 Avid Reader Recommendations** (`get_reader_recommendations`): Books for continuous reading
 - **🏷️ Book Keyword Analysis** (`get_book_keywords`): Core keywords for each book
 
 ### 🗺️ Location-Based Services (Custom Implementation)
+
 - **📍 Nearby Library Search** (`search_nearby_libraries`): GPS-based automatic nearby library search
   - **Distance Sorting**: Real-time distance calculation and nearest-first sorting
   - **Detailed Distance Information**: Precise distance (km) to each library
 
 ### 🔧 Code Search Tools (API Integration Support)
+
 - **🏛️ Library Code Search** (`search_library_codes`): Find libCode by library name
 - **🌍 Region Code Lookup** (`get_region_codes`, `get_detailed_region_codes`): National/detailed region codes
 - **📚 Subject Classification Codes** (`get_subject_codes`, `get_detailed_subject_codes`): KDC major/sub-classifications
 - **📊 Integrated Information Lookup** (`get_library_info`, `get_popular_books_by_library`): Comprehensive library information
 
 ### 🛠️ Session Management
+
 - **📊 Usage Statistics** (`session_stats`): Real-time tool call statistics and session information
 
 ## 💡 Real-World Usage Scenarios
 
 ### 🔍 Finding Libraries
+
 - **"Where are libraries near me?"** → Use `search_nearby_libraries`
 - **"Find libraries in Gangnam-gu, Seoul"** → Sequential use of `search_detailed_region_codes` + `search_libraries`
 
 ### 📖 Book Search
+
 - **"Where can I borrow Harry Potter books?"** → Link `search_books` + `search_libraries_by_book`
 - **"Find novels by Kim Young-ha"** → `search_books` (author name search)
 
 ### 📊 Trend Analysis
+
 - **"What books are popular these days?"** → `search_popular_books` or `get_hot_trend`
 - **"Popular books at Gangnam Library"** → `search_library_codes` + `search_popular_books_by_library`
 
 ### 📈 Statistical Analysis
+
 - **"How much do people in Seoul read?"** → `get_reading_quantity`
 - **"Show me library usage graphs"** → `get_usage_trend`
 
 ### 🎯 Complex Query Examples
+
 - **"New book status at nearby libraries"**
+
   1. `search_nearby_libraries` (location-based library search)
   2. `get_new_arrival_books` (new arrivals for each library)
 
@@ -102,18 +115,22 @@
 ## 🎬 Use Cases
 
 ### 🏛️ Civic/Institutional Portals
+
 - Neighborhood library status and operational information chatbots
 - New/popular book notification services
 
 ### 🎓 Education/Research
+
 - KDC subject-based reading trend analysis
 - Age/regional reading statistics reports
 
 ### 📈 Publishing/Marketing
+
 - Popular genre/book discovery (by age/gender/region)
 - Trend change monitoring
 
 ### 📱 Apps/Services
+
 - ISBN-based real-time holdings/loan availability UX
 - Location-based library recommendations
 
@@ -299,7 +316,7 @@ pwd
 
 # Absolute path examples
 # Windows: C:\Users\YourName\Downloads\data4library-mcp
-# macOS: /Users/YourName/Downloads/data4library-mcp  
+# macOS: /Users/YourName/Downloads/data4library-mcp
 # Linux: /home/YourName/Downloads/data4library-mcp
 ```
 

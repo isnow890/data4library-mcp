@@ -3,8 +3,13 @@ import { REGION_CODES, KDC_SUBJECT_CODES } from "../constants/codes.js";
 import { z } from "zod";
 import * as schemas from "../schemas/book.schema.js";
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { addDistanceToLibrary, sortLibrariesByDistance, LibraryWithDistance } from "../utils/location.js";
+
+// ES 모듈에서 __dirname 대체
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Zod 스키마 정의
 const getSubjectCodesSchema = z.object({
@@ -113,25 +118,37 @@ export const createBookToolHandlers = (client: LibraryApiClient) => ({
     searchNearbyLibraries: async (args: { latitude: number; longitude: number; count?: number }) => {
         try {
             // 도서관 데이터 파일 로드
-            let librariesData: any[];
+            let librariesData: any[] = [];
             
-            try {
-                // 빌드된 버전에서 시도 (dist/data/libraries.json)
-                const distPath = join(process.cwd(), "dist/data/libraries.json");
-                const fileContent = readFileSync(distPath, "utf-8");
-                librariesData = JSON.parse(fileContent);
-            } catch (error) {
+            const possiblePaths = [
+                join(process.cwd(), "dist/data/libraries.json"),
+                join(process.cwd(), "dist/src/data/libraries.json"),
+                join(process.cwd(), "src/data/libraries.json"),
+                join(__dirname, "../data/libraries.json"),
+                join(__dirname, "../../data/libraries.json"),
+                join(__dirname, "data/libraries.json")
+            ];
+
+            let fileLoaded = false;
+            let lastError: any;
+
+            for (const filePath of possiblePaths) {
                 try {
-                    // fallback: dist/src/data/libraries.json
-                    const distSrcPath = join(process.cwd(), "dist/src/data/libraries.json");
-                    const fileContent = readFileSync(distSrcPath, "utf-8");
+                    const fileContent = readFileSync(filePath, "utf-8");
                     librariesData = JSON.parse(fileContent);
-                } catch (fallbackError) {
-                    // 개발 환경: src/data/libraries.json
-                    const srcPath = join(process.cwd(), "src/data/libraries.json");
-                    const fileContent = readFileSync(srcPath, "utf-8");
-                    librariesData = JSON.parse(fileContent);
+                    fileLoaded = true;
+                    console.error(`[search_nearby_libraries] Successfully loaded data from: ${filePath}`);
+                    break;
+                } catch (error) {
+                    lastError = error;
+                    console.error(`[search_nearby_libraries] Failed to load from: ${filePath}`);
+                    continue;
                 }
+            }
+
+            if (!fileLoaded) {
+                console.error(`[search_nearby_libraries] All paths failed. CWD: ${process.cwd()}, __dirname: ${__dirname}`);
+                throw new Error(`도서관 데이터를 로드할 수 없습니다: ${lastError?.message || 'Unknown error'}`);
             }
 
             // 각 도서관에 거리 정보 추가

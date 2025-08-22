@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://firebasestorage.googleapis.com/v0/b/rottenbridge-e6efa.appspot.com/o/logo.jpg?alt=media&token=68d16fd2-799f-4aba-8c1e-da6977e2949e" alt="Data4Library MCP Server Logo" width="200"/>
+  <img src="https://firebasestorage.googleapis.com/v0/b/rottenbridge-e6efa.appspot.com/o/logo.jpg?alt=media&token=68d16fd2-799f-4aba-8c1e-da6977e2949e" alt="Data4Library MCP Server Logo" width="300"/>
 </div>
 
 # 📚 정보나루 도서검색 MCP (data4library-mcp)
@@ -22,6 +22,7 @@
 ## 🎯 주요 기능 (25개 도구)
 
 ### 📚 도서관 & 도서 검색
+
 - **🏛️ 전국 공공도서관 검색** (`search_libraries`): 지역별, 도서관명으로 검색
 - **📖 도서 통합 검색** (`search_books`): 제목, 저자, 출판사, 주제별 도서 검색
 - **🔍 도서관별 소장도서 검색** (`search_libraries_by_book`): 특정 도서를 소장한 도서관 찾기
@@ -29,6 +30,7 @@
 - **✅ 대출 가능 여부** (`check_book_availability`): 실시간 대출 가능 상태 확인
 
 ### 📊 인기도서 & 트렌드 분석
+
 - **🔥 인기 대출도서** (`search_popular_books`): 전국/지역별 베스트셀러
 - **🏆 도서관별 인기도서** (`search_popular_books_by_library`): 특정 도서관의 인기도서
 - **📈 대출 급상승 도서** (`get_hot_trend`): 트렌딩 도서 실시간 조회
@@ -36,50 +38,61 @@
 - **🏷️ 이달의 키워드** (`get_monthly_keywords`): 독서 트렌드 키워드
 
 ### 📈 통계 & 분석 도구
+
 - **📊 대출반납 추이** (`get_usage_trend`): 도서관별 이용 통계 그래프
 - **🌍 지역별 독서량** (`get_reading_quantity`): 독서율 및 독서량 비교
 - **📚 장서/대출 데이터** (`search_items`): 도서관별 상세 통계
 - **📖 도서 이용 분석** (`get_book_usage_analysis`): 특정 도서의 이용 패턴
 
 ### 🎯 개인화 추천 시스템
+
 - **🎓 마니아 추천도서** (`get_mania_recommendations`): 전문가용 심화 도서
 - **📚 다독자 추천도서** (`get_reader_recommendations`): 연속 독서용 도서
 - **🏷️ 도서 키워드 분석** (`get_book_keywords`): 도서별 핵심 키워드
 
 ### 🗺️ 위치 기반 서비스 (독자적 구현)
+
 - **📍 내 주변 도서관 검색** (`search_nearby_libraries`): GPS 기반 가까운 도서관 자동 검색
   - **거리순 정렬**: 실시간 거리 계산 및 가까운 순서로 정렬
   - **상세 거리 정보**: 각 도서관까지의 정확한 거리(km) 표시
 
 ### 🔧 코드 검색 도구 (API 연동 지원)
+
 - **🏛️ 도서관 코드 검색** (`search_library_codes`): 도서관명으로 libCode 찾기
 - **🌍 지역코드 조회** (`get_region_codes`, `get_detailed_region_codes`): 전국/세부 지역코드
 - **📚 주제분류코드** (`get_subject_codes`, `get_detailed_subject_codes`): KDC 대/세분류
 - **📊 통합정보 조회** (`get_library_info`, `get_popular_books_by_library`): 도서관별 종합 정보
 
 ### 🛠️ 세션 관리
+
 - **📊 사용량 통계** (`session_stats`): 실시간 도구 호출 통계 및 세션 정보
 
 ## 💡 실제 사용 시나리오
 
 ### 🔍 도서관 찾기
+
 - **"내 주변 도서관 어디 있어?"** → `search_nearby_libraries` 사용
 - **"서울 강남구 도서관 찾아줘"** → `search_detailed_region_codes` + `search_libraries` 순차 사용
 
 ### 📖 도서 검색
+
 - **"해리포터 책 어디서 빌릴 수 있어?"** → `search_books` + `search_libraries_by_book` 연계
 - **"김영하 작가 소설 찾아줘"** → `search_books` (저자명 검색)
 
 ### 📊 트렌드 분석
+
 - **"요즘 인기 있는 책 뭐야?"** → `search_popular_books` 또는 `get_hot_trend`
 - **"강남도서관에서 인기 있는 책"** → `search_library_codes` + `search_popular_books_by_library`
 
 ### 📈 통계 분석
+
 - **"서울 사람들이 책을 얼마나 많이 읽어?"** → `get_reading_quantity`
 - **"도서관 이용 그래프 보여줘"** → `get_usage_trend`
 
 ### 🎯 복합 쿼리 예시
+
 - **"내 주변 도서관들의 신간 도서 현황"**
+
   1. `search_nearby_libraries` (위치 기반 도서관 검색)
   2. `get_new_arrival_books` (각 도서관별로 신간 조회)
 
@@ -102,18 +115,22 @@
 ## 🎬 활용 사례
 
 ### 🏛️ 시민/기관 포털
+
 - 동네 도서관 현황 및 운영 정보 챗봇
 - 신간/인기도서 알림 서비스
 
 ### 🎓 교육/연구
+
 - KDC 주제별 독서 트렌드 분석
 - 연령/지역별 독서 통계 리포트
 
 ### 📈 출판/마케팅
+
 - 인기 장르/도서 발굴 (연령/성별/지역별)
 - 트렌드 변화 모니터링
 
 ### 📱 앱/서비스
+
 - ISBN 기반 실시간 소장/대출 가능 여부 UX
 - 위치 기반 도서관 추천
 
@@ -299,7 +316,7 @@ pwd
 
 # 절대 경로 예시
 # Windows: C:\Users\YourName\Downloads\data4library-mcp
-# macOS: /Users/YourName/Downloads/data4library-mcp  
+# macOS: /Users/YourName/Downloads/data4library-mcp
 # Linux: /home/YourName/Downloads\data4library-mcp
 ```
 
