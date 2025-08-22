@@ -20,14 +20,17 @@ repository: https://github.com/isnow890/data4library-mcp
 license: MIT
 
 # Smithery.ai configuration
+runtime: "typescript"
 startCommand:
   type: stdio
   configSchema:
     type: object
+    required: ["LIBRARY_API_KEY"]
     properties:
       LIBRARY_API_KEY:
         type: string
-        description: "도서관정보나루 API Key (선택사항: 제한된 기능으로 작동)"
+        title: "도서관정보나루 API Key"
+        description: "도서관정보나루에서 발급받은 API 키입니다."
   commandFunction: |-
     (config) => ({
       command: "node",
