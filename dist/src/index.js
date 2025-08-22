@@ -20,16 +20,15 @@ const debugStats = {
     sessionCalls: 0,
     startTime: Date.now(),
 };
-// 환경 변수 유효성 검사
-if (!API_KEY) {
-    console.error("Error: LIBRARY_API_KEY environment variable is required");
-    process.exit(1);
-}
-// API 클라이언트 초기화
+// API 클라이언트 초기화 (API 키가 없어도 일부 기능 제한적으로 작동)
 const client = new LibraryApiClient({
-    apiKey: API_KEY,
+    apiKey: API_KEY || "",
     baseUrl: API_BASE_URL,
 });
+// API 키가 없는 경우 경고 메시지
+if (!API_KEY) {
+    console.error("Warning: LIBRARY_API_KEY not provided. Running with limited functionality.");
+}
 // FastMCP 서버 인스턴스 생성
 const server = new FastMCP({
     name: "Book Information MCP",

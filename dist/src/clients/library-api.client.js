@@ -32,6 +32,10 @@ export class LibraryApiClient {
      * GET 요청
      */
     async get(url, params = {}) {
+        // API 키가 없는 경우 에러 처리
+        if (!this.apiKey) {
+            throw new Error("API 키가 설정되지 않았습니다. LIBRARY_API_KEY 환경변수를 설정해주세요.");
+        }
         // API 키와 JSON 형식 요청 추가
         params.authKey = this.apiKey;
         params.format = 'json';

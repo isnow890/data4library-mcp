@@ -24,16 +24,15 @@ startCommand:
   type: stdio
   configSchema:
     type: object
-    required: ["LIBRARY_API_KEY"]
     properties:
       LIBRARY_API_KEY:
         type: string
-        description: "도서관정보나루 API Key"
+        description: "도서관정보나루 API Key (선택사항: 제한된 기능으로 작동)"
   commandFunction: |-
     (config) => ({
       command: "node",
       args: ["dist/src/index.js"],
       env: {
-        LIBRARY_API_KEY: config.LIBRARY_API_KEY
+        LIBRARY_API_KEY: config.LIBRARY_API_KEY || ""
       }
     })
