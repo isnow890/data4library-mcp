@@ -1,0 +1,63 @@
+{
+  "name": "@isnow890/data4library-mcp",
+  "version": "1.0.0",
+  "description": "FastMCP-powered Book Information MCP Server using 도서관정보나루 (Library Information Gateway) API - Search Korean public libraries, books, popular titles, and library statistics",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "prebuild": "shx rm -rf dist",
+    "build": "tsc",
+    "postbuild": "shx cp -r src/data dist/src/",
+    "prepare": "npm run build",
+    "watch": "tsc --watch",
+    "start": "node dist/src/index.js",
+    "dev": "npm run build && npm run start",
+    "test": "echo \"Tests coming soon\" && exit 0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "fastmcp": "^3.1.1",
+    "axios": "^1.11.0",
+    "zod": "^3.24.2",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "shx": "^0.3.4",
+    "typescript": "^5.3.3"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "fastmcp",
+    "library",
+    "books",
+    "korean-library",
+    "public-library",
+    "book-search",
+    "library-api",
+    "도서관정보나루",
+    "claude",
+    "ai-tools"
+  ],
+  "author": {
+    "name": "isnow890",
+    "email": "isnow890@example.com"
+  },
+  "license": "MIT",
+  "bin": {
+    "data4library-mcp": "dist/src/index.js"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}
