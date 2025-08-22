@@ -2,6 +2,9 @@ import { LibraryApiClient } from "../clients/library-api.client.js";
 import { REGION_CODES, KDC_SUBJECT_CODES } from "../constants/codes.js";
 import { z } from "zod";
 import * as schemas from "../schemas/book.schema.js";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { addDistanceToLibrary, sortLibrariesByDistance, LibraryWithDistance } from "../utils/location.js";
 
 // Zod 스키마 정의
 const getSubjectCodesSchema = z.object({
@@ -106,5 +109,76 @@ export const createBookToolHandlers = (client: LibraryApiClient) => ({
     },
     getPopularBooksByLibrary: async (args: z.infer<typeof schemas.getPopularBooksByLibrarySchema>) => {
         return await client.getPopularBooksByLibrary(args.libCode);
+    },
+    searchNearbyLibraries: async (args: { latitude: number; longitude: number; count?: number }) => {
+        try {
+            // 도서관 데이터 파일 로드
+            let librariesData: any[];
+            
+            try {
+                // 빌드된 버전에서 시도 (dist/data/libraries.json)
+                const distPath = join(process.cwd(), "dist/data/libraries.json");
+                const fileContent = readFileSync(distPath, "utf-8");
+                librariesData = JSON.parse(fileContent);
+            } catch (error) {
+                try {
+                    // fallback: dist/src/data/libraries.json
+                    const distSrcPath = join(process.cwd(), "dist/src/data/libraries.json");
+                    const fileContent = readFileSync(distSrcPath, "utf-8");
+                    librariesData = JSON.parse(fileContent);
+                } catch (fallbackError) {
+                    // 개발 환경: src/data/libraries.json
+                    const srcPath = join(process.cwd(), "src/data/libraries.json");
+                    const fileContent = readFileSync(srcPath, "utf-8");
+                    librariesData = JSON.parse(fileContent);
+                }
+            }
+
+            // 각 도서관에 거리 정보 추가
+            const librariesWithDistance: LibraryWithDistance[] = [];
+            
+            for (const library of librariesData) {
+                const libraryWithDistance = addDistanceToLibrary(
+                    library,
+                    args.latitude,
+                    args.longitude
+                );
+                
+                if (libraryWithDistance) {
+                    librariesWithDistance.push(libraryWithDistance);
+                }
+            }
+
+            // 거리순으로 정렬
+            const sortedLibraries = sortLibrariesByDistance(librariesWithDistance);
+            
+            // 요청된 개수만큼 반환 (기본값: 15개)
+            const count = args.count || 15;
+            const nearbyLibraries = sortedLibraries.slice(0, count);
+
+            return {
+                success: true,
+                userLocation: {
+                    latitude: args.latitude,
+                    longitude: args.longitude
+                },
+                totalFound: librariesWithDistance.length,
+                returned: nearbyLibraries.length,
+                libraries: nearbyLibraries.map(lib => ({
+                    libName: lib.libName,
+                    region: lib.region,
+                    address: lib.address,
+                    tel: lib.tel,
+                    operatingTime: lib.operatingTime,
+                    closed: lib.closed,
+                    libCode: lib.libCode,
+                    latitude: lib.latitude,
+                    longitude: lib.longitude,
+                    distance: lib.distance
+                }))
+            };
+        } catch (error) {
+            throw new Error(`근처 도서관 검색 중 오류가 발생했습니다: ${error instanceof Error ? error.message : String(error)}`);
+        }
     },
 });

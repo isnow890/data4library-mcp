@@ -369,3 +369,23 @@ export const getPopularBooksByLibrarySchema = z.object({
     .string()
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
 });
+
+// 위치 기반 근처 도서관 검색 스키마
+export const searchNearbyLibrariesSchema = z.object({
+  latitude: z
+    .number()
+    .min(-90)
+    .max(90)
+    .describe("사용자의 위도 (-90 ~ 90)"),
+  longitude: z
+    .number()
+    .min(-180)
+    .max(180)
+    .describe("사용자의 경도 (-180 ~ 180)"),
+  count: z
+    .number()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("반환할 도서관 개수 (기본값: 15, 최대: 100)"),
+});
