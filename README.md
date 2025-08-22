@@ -119,11 +119,53 @@ export LIBRARY_API_KEY="your-api-key"
 
 ## Install
 
-### Step 1: Download source code
+### Method 1: NPX Installation (Recommended)
 
-To use this MCP server, first download the source code:
+The easiest way to use this MCP server is through NPX installation. For detailed package information, see the [NPM package page](https://www.npmjs.com/package/@isnow890/data4library-mcp).
 
-#### Clone with Git
+#### Claude Desktop Configuration
+
+Add the following to your Claude Desktop config file (Windows: `%APPDATA%\Claude\claude_desktop_config.json`, macOS/Linux: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "data4library-mcp": {
+      "command": "npx",
+      "args": ["-y", "@isnow890/data4library-mcp"],
+      "env": {
+        "LIBRARY_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+#### Cursor AI Configuration
+
+Add to `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "data4library-mcp": {
+      "command": "npx",
+      "args": ["-y", "@isnow890/data4library-mcp"],
+      "env": {
+        "LIBRARY_API_KEY": "your-api-key"
+      }
+    }
+  }
+}
+```
+
+### Method 2: Local Installation
+
+For local development or custom modifications:
+
+#### Step 1: Download source code and build
+
+##### Clone with Git
 
 ```bash
 git clone https://github.com/isnow890/data4library-mcp.git
@@ -132,7 +174,7 @@ npm install
 npm run build
 ```
 
-#### Or download ZIP file
+##### Or download ZIP file
 
 1. Download the latest version from [GitHub Releases page](https://github.com/isnow890/data4library-mcp/releases)
 2. Extract the ZIP file to your desired location
@@ -144,14 +186,17 @@ npm install
 npm run build
 ```
 
-### Step 2: Claude Desktop Configuration
+⚠️ **Important**: After installation, you must run `npm run build` to generate the compiled JavaScript files in the `dist` folder.
 
-After installation, you'll need:
+#### Step 2: Claude Desktop Configuration
+
+After build completion, you'll need:
 
 - **LIBRARY_API_KEY**: API key issued from Data4Library
+- **LIBRARY_CLIENT_SECRET**: Client secret issued from Data4Library
 - **Installation path**: Absolute path to the downloaded folder
 
-#### Windows Configuration
+##### Windows Configuration
 
 Add the following to Claude Desktop config file (`%APPDATA%\Claude\claude_desktop_config.json`):
 
@@ -175,7 +220,7 @@ Add the following to Claude Desktop config file (`%APPDATA%\Claude\claude_deskto
 }
 ```
 
-#### macOS/Linux Configuration
+##### macOS/Linux Configuration
 
 Add the following to Claude Desktop config file (`~/Library/Application Support/Claude/claude_desktop_config.json`):
 
@@ -195,12 +240,13 @@ Add the following to Claude Desktop config file (`~/Library/Application Support/
 }
 ```
 
-### Step 3: Path Configuration Important Notes
+##### Path Configuration Important Notes
 
 ⚠️ **Important**: Replace the following paths in the above configuration with your actual installation paths:
 
 - **Windows**: Change `C:\\path\\to\\data4library-mcp` to your actual downloaded folder path
 - **macOS/Linux**: Change `/path/to/data4library-mcp` to your actual downloaded folder path
+- **Build path**: Make sure the path points to `dist/src/index.js` (not just `index.js`)
 
 Finding the path:
 
@@ -214,7 +260,7 @@ pwd
 # Linux: /home/YourName/Downloads/data4library-mcp
 ```
 
-### Step 4: Restart Claude Desktop
+#### Step 3: Restart Claude Desktop
 
 After completing the configuration, completely close and restart Claude Desktop to activate the Data4Library MCP server.
 

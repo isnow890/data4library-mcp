@@ -93,11 +93,53 @@
 
 ## 설치
 
-### 1단계: 소스 코드 다운로드
+### 방법 1: NPX 설치 (권장)
 
-이 MCP 서버를 사용하려면 먼저 소스 코드를 다운로드해야 합니다:
+이 MCP 서버를 사용하는 가장 쉬운 방법은 NPX를 통한 설치입니다. 자세한 패키지 정보는 [NPM 패키지 페이지](https://www.npmjs.com/package/@isnow890/data4library-mcp)를 참조하세요.
 
-#### Git으로 클론하기
+#### Claude Desktop 설정
+
+Claude Desktop 설정 파일에 다음을 추가하세요 (Windows: `%APPDATA%\Claude\claude_desktop_config.json`, macOS/Linux: `~/Library/Application Support/Claude/claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "data4library-mcp": {
+      "command": "npx",
+      "args": ["-y", "@isnow890/data4library-mcp"],
+      "env": {
+        "LIBRARY_API_KEY": "발급받은-api-키"
+      }
+    }
+  }
+}
+```
+
+#### Cursor AI 설정
+
+`mcp.json`에 추가:
+
+```json
+{
+  "mcpServers": {
+    "data4library-mcp": {
+      "command": "npx",
+      "args": ["-y", "@isnow890/data4library-mcp"],
+      "env": {
+        "LIBRARY_API_KEY": "발급받은-api-키"
+      }
+    }
+  }
+}
+```
+
+### 방법 2: 로컬 설치
+
+로컬 개발이나 커스텀 수정이 필요한 경우:
+
+#### 1단계: 소스 코드 다운로드 및 빌드
+
+##### Git으로 클론하기
 
 ```bash
 git clone https://github.com/isnow890/data4library-mcp.git
@@ -106,7 +148,7 @@ npm install
 npm run build
 ```
 
-#### 또는 ZIP 파일로 다운로드
+##### 또는 ZIP 파일로 다운로드
 
 1. [GitHub 릴리스 페이지](https://github.com/isnow890/data4library-mcp/releases)에서 최신 버전을 다운로드
 2. ZIP 파일을 원하는 위치에 압축 해제
@@ -118,14 +160,16 @@ npm install
 npm run build
 ```
 
-### 2단계: Claude Desktop 설정
+⚠️ **중요**: 설치 후 반드시 `npm run build`를 실행하여 컴파일된 JavaScript 파일이 포함된 `dist` 폴더를 생성해야 합니다.
 
-설치가 완료되면 다음 정보가 필요합니다:
+#### 2단계: Claude Desktop 설정
+
+빌드 완료 후 다음 정보가 필요합니다:
 
 - **LIBRARY_API_KEY**: 도서관정보나루에서 발급받은 API 키
 - **설치 경로**: 다운로드한 폴더의 절대 경로
 
-#### Windows 설정
+##### Windows 설정
 
 Claude Desktop 설정 파일(`%APPDATA%\Claude\claude_desktop_config.json`)에 다음을 추가:
 
@@ -149,7 +193,7 @@ Claude Desktop 설정 파일(`%APPDATA%\Claude\claude_desktop_config.json`)에 �
 }
 ```
 
-#### macOS/Linux 설정
+##### macOS/Linux 설정
 
 Claude Desktop 설정 파일(`~/Library/Application Support/Claude/claude_desktop_config.json`)에 다음을 추가:
 
@@ -169,12 +213,13 @@ Claude Desktop 설정 파일(`~/Library/Application Support/Claude/claude_deskto
 }
 ```
 
-### 3단계: 경로 설정 주의사항
+##### 경로 설정 주의사항
 
 ⚠️ **중요**: 위 설정에서 다음 경로들을 실제 설치 경로로 변경해야 합니다:
 
 - **Windows**: `C:\\path\\to\\data4library-mcp`를 실제 다운로드한 폴더 경로로 변경
 - **macOS/Linux**: `/path/to/data4library-mcp`를 실제 다운로드한 폴더 경로로 변경
+- **빌드 경로**: 경로가 `dist/src/index.js`를 가리키는지 확인 (`index.js`만이 아님)
 
 경로 찾기:
 
@@ -188,7 +233,7 @@ pwd
 # Linux: /home/홍길동/Downloads/data4library-mcp
 ```
 
-### 4단계: Claude Desktop 재시작
+#### 3단계: Claude Desktop 재시작
 
 설정 완료 후 Claude Desktop을 완전히 종료하고 다시 시작하면 데이터포라이브러리 MCP 서버가 활성화됩니다.
 
