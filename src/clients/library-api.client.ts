@@ -251,9 +251,9 @@ export class LibraryApiClient {
     // 도서관명으로 검색
     if (libraryName) {
       const searchTerm = libraryName.toLowerCase();
-      filteredLibraries = filteredLibraries.filter(lib => 
-        lib.libName?.toLowerCase().includes(searchTerm) ||
-        lib.libCode?.toLowerCase().includes(searchTerm)
+      filteredLibraries = filteredLibraries.filter(lib =>
+        lib.name?.toLowerCase().includes(searchTerm) ||
+        lib.code?.toLowerCase().includes(searchTerm)
       );
     }
 
@@ -270,10 +270,10 @@ export class LibraryApiClient {
     const results = filteredLibraries.slice(0, limit);
     
     const searchResults = results.map(lib => ({
-      libCode: lib.libCode,
-      libName: lib.libName,
+      libCode: lib.code,
+      libName: lib.name,
       address: lib.address,
-      region: lib.region,
+      region: lib.address.split(' ').slice(0, 2).join(' '), // Extract region from address
       tel: lib.tel,
       homepage: lib.homepage
     }));
