@@ -1,3 +1,4 @@
+[![smithery badge](https://smithery.ai/badge/@isnow890/data4library-mcp)](https://smithery.ai/server/@isnow890/data4library-mcp)
 [![MSeeP.ai Security Assessment Badge](https://mseep.net/pr/isnow890-data4library-mcp-badge.png)](https://mseep.ai/app/isnow890-data4library-mcp)
 
 <div align="center">

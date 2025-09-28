@@ -1,3 +1,6 @@
+[![smithery badge](https://smithery.ai/badge/@isnow890/data4library-mcp)](https://smithery.ai/server/@isnow890/data4library-mcp)
+[![MSeeP.ai Security Assessment Badge](https://mseep.net/pr/isnow890-data4library-mcp-badge.png)](https://mseep.ai/app/isnow890-data4library-mcp)
+
 <div align="center">
   <img src="https://firebasestorage.googleapis.com/v0/b/rottenbridge-e6efa.appspot.com/o/logo.jpg?alt=media&token=68d16fd2-799f-4aba-8c1e-da6977e2949e" alt="Data4Library MCP Server Logo" width="300"/>
 </div>
