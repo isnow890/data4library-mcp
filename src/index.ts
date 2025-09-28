@@ -25,13 +25,15 @@ export function createData4LibraryServer({
   }
 
   console.error("Creating server with config:", {
-    LIBRARY_API_KEY: config.LIBRARY_API_KEY ? `[${config.LIBRARY_API_KEY.length} chars]` : "undefined",
+    LIBRARY_API_KEY: config.LIBRARY_API_KEY
+      ? `[${config.LIBRARY_API_KEY.length} chars]`
+      : "undefined",
   });
 
   // Create a new MCP server only once
   const server = new McpServer({
     name: "data4library-mcp",
-    version: "1.0.0",
+    version: "1.0.5",
   });
 
   // Initialize client with config
@@ -122,7 +124,10 @@ try {
   }
 
   // Additional check for NPX execution
-  if (!isMainModule && process.argv.some(arg => arg.includes('data4library-mcp'))) {
+  if (
+    !isMainModule &&
+    process.argv.some((arg) => arg.includes("data4library-mcp"))
+  ) {
     isMainModule = true;
     console.error("Detected NPX execution, forcing main module mode");
   }
