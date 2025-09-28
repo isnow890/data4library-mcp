@@ -75,7 +75,6 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
     }
   );
 
-  // Add other essential tools only
   server.registerTool(
     "get_book_detail",
     {
@@ -105,6 +104,104 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
   );
 
   server.registerTool(
+    "get_hot_trend",
+    {
+      description: "대출 급상승 도서를 조회합니다.",
+      inputSchema: schemas.getHotTrendSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getHotTrend(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "search_libraries_by_book",
+    {
+      description: "특정 도서를 소장한 도서관을 검색합니다.",
+      inputSchema: schemas.searchLibrariesByBookSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.searchLibrariesByBook(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_usage_trend",
+    {
+      description: "도서관별 대출반납 추이를 조회합니다.",
+      inputSchema: schemas.getUsageTrendSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getUsageTrend(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_new_arrival_books",
+    {
+      description: "도서관별 신착도서를 조회합니다.",
+      inputSchema: schemas.getNewArrivalBooksSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getNewArrivalBooks(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_reading_quantity",
+    {
+      description: "지역별 독서량/독서율을 조회합니다.",
+      inputSchema: schemas.getReadingQuantitySchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getReadingQuantity(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_monthly_keywords",
+    {
+      description: "이달의 키워드를 조회합니다.",
+      inputSchema: schemas.getMonthlyKeywordsSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getMonthlyKeywords(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_detailed_region_codes",
+    {
+      description: "세부지역 코드를 조회합니다.",
+      inputSchema: schemas.getDetailedRegionCodesSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getDetailedRegionCodes(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
     "get_region_codes",
     {
       description: "지역 코드 목록을 조회합니다.",
@@ -112,6 +209,20 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
     },
     async () => {
       const result = await handlers.getRegionCodes();
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_detailed_subject_codes",
+    {
+      description: "세부주제 코드를 조회합니다.",
+      inputSchema: schemas.getDetailedSubjectCodesSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getDetailedSubjectCodes(args);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -128,6 +239,146 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
     },
     async (args) => {
       const result = await handlers.getSubjectCodes(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "search_detailed_kdc_codes",
+    {
+      description: "세부주제코드를 검색합니다.",
+      inputSchema: schemas.searchDetailedKDCCodesSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.searchDetailedKDCCodes(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "search_detailed_region_codes",
+    {
+      description: "세부지역코드를 검색합니다.",
+      inputSchema: schemas.searchDetailedRegionCodesSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.searchDetailedRegionCodes(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "search_items",
+    {
+      description: "도서관별 장서/대출 데이터를 조회합니다.",
+      inputSchema: schemas.searchItemsSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.searchItems(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_mania_recommendations",
+    {
+      description: "마니아 추천도서를 조회합니다.",
+      inputSchema: schemas.getManiaRecommendationsSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getManiaRecommendations(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_reader_recommendations",
+    {
+      description: "다독자 추천도서를 조회합니다.",
+      inputSchema: schemas.getReaderRecommendationsSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getReaderRecommendations(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_book_keywords",
+    {
+      description: "도서 키워드 목록을 조회합니다.",
+      inputSchema: schemas.getBookKeywordsSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getBookKeywords(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_book_usage_analysis",
+    {
+      description: "도서별 이용 분석을 조회합니다.",
+      inputSchema: schemas.getBookUsageAnalysisSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getBookUsageAnalysis(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "search_popular_books_by_library",
+    {
+      description: "도서관/지역별 인기대출 도서를 조회합니다.",
+      inputSchema: schemas.searchPopularBooksByLibrarySchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.searchPopularBooksByLibrary(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_library_info",
+    {
+      description: "도서관별 통합정보를 조회합니다.",
+      inputSchema: schemas.getLibraryInfoSchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getLibraryInfo(args);
+      return {
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+      };
+    }
+  );
+
+  server.registerTool(
+    "get_popular_books_by_library",
+    {
+      description: "도서관별 인기대출도서를 조회합니다.",
+      inputSchema: schemas.getPopularBooksByLibrarySchema.shape,
+    },
+    async (args) => {
+      const result = await handlers.getPopularBooksByLibrary(args);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
