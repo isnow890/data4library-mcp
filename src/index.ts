@@ -11,11 +11,16 @@ import * as schemas from "./schemas/book.schema.js";
 import { createBookToolHandlers } from "./handlers/book.handler.js";
 import { createValidatedTools, type McpTool } from "./schemas/tool.schema.js";
 
+// Configuration schema for Smithery
+export const configSchema = z.object({
+  LIBRARY_API_KEY: z.string().describe("도서관정보나루 API Key"),
+});
+
 // 환경 변수 로드
 dotenv.config();
 
 // package.json 로드 (bundled environment 호환)
-let package_json;
+let package_json: { name: string; version: string };
 try {
   // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
   package_json = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf-8"));
@@ -27,10 +32,15 @@ try {
   };
 }
 
-// 환경 변수 설정
-const API_KEY = process.env.LIBRARY_API_KEY;
+// 환경 변수 설정 및 검증
+const API_KEY = process.env.LIBRARY_API_KEY?.trim();
 const API_BASE_URL = "http://data4library.kr";
 
+console.error("Environment variables:", {
+  LIBRARY_API_KEY: process.env.LIBRARY_API_KEY
+    ? `[${process.env.LIBRARY_API_KEY.length} chars]`
+    : "undefined",
+});
 
 // 디버그 통계
 const debugStats = {
@@ -48,12 +58,13 @@ const client = new LibraryApiClient({
 // API 키가 없는 경우 경고 메시지
 if (!API_KEY) {
   console.error("Warning: LIBRARY_API_KEY not provided. Running with limited functionality.");
+  console.error("Please set the LIBRARY_API_KEY environment variable.");
 }
 
 // FastMCP 서버 인스턴스 생성
 const server = new FastMCP({
   name: "Book Information MCP",
-  version: package_json.version,
+  version: package_json.version as `${number}.${number}.${number}`,
 });
 
 function toolFn(name: string, fn: (data: any, ctx?: any) => Promise<any>) {
@@ -310,8 +321,112 @@ server.addTool({
   }),
 });
 
-// 서버 시작
-server.start({ transportType: "stdio" }).catch((error: any) => {
-  console.error("Fatal error running server:", error);
-  process.exit(1);
-});
+// Smithery compatibility: server factory function
+export function createData4LibraryServer({
+  config,
+}: {
+  config: z.infer<typeof configSchema>;
+}) {
+  console.error("Creating server with config:", {
+    LIBRARY_API_KEY: config.LIBRARY_API_KEY ? `[${config.LIBRARY_API_KEY.length} chars]` : "undefined",
+  });
+
+  // Initialize new client with provided config
+  const configuredClient = new LibraryApiClient({
+    apiKey: config.LIBRARY_API_KEY || "",
+    baseUrl: API_BASE_URL,
+  });
+
+  // Create new server instance
+  const configuredServer = new FastMCP({
+    name: "Book Information MCP",
+    version: package_json.version as `${number}.${number}.${number}`,
+  });
+
+  // Create handlers with configured client
+  const configuredBookToolHandlers = createBookToolHandlers(configuredClient);
+
+  // Create handler mapping for configured tools
+  const handlerMap = new Map<Function, Function>();
+  handlerMap.set(bookToolHandlers.searchLibraryCodes, configuredBookToolHandlers.searchLibraryCodes);
+  handlerMap.set(bookToolHandlers.searchLibraries, configuredBookToolHandlers.searchLibraries);
+  handlerMap.set(bookToolHandlers.searchBooks, configuredBookToolHandlers.searchBooks);
+  handlerMap.set(bookToolHandlers.searchPopularBooks, configuredBookToolHandlers.searchPopularBooks);
+  handlerMap.set(bookToolHandlers.getBookDetail, configuredBookToolHandlers.getBookDetail);
+  handlerMap.set(bookToolHandlers.checkBookAvailability, configuredBookToolHandlers.checkBookAvailability);
+  handlerMap.set(bookToolHandlers.getHotTrend, configuredBookToolHandlers.getHotTrend);
+  handlerMap.set(bookToolHandlers.searchLibrariesByBook, configuredBookToolHandlers.searchLibrariesByBook);
+  handlerMap.set(bookToolHandlers.getUsageTrend, configuredBookToolHandlers.getUsageTrend);
+  handlerMap.set(bookToolHandlers.getNewArrivalBooks, configuredBookToolHandlers.getNewArrivalBooks);
+  handlerMap.set(bookToolHandlers.getReadingQuantity, configuredBookToolHandlers.getReadingQuantity);
+  handlerMap.set(bookToolHandlers.getMonthlyKeywords, configuredBookToolHandlers.getMonthlyKeywords);
+  handlerMap.set(bookToolHandlers.getDetailedRegionCodes, configuredBookToolHandlers.getDetailedRegionCodes);
+  handlerMap.set(bookToolHandlers.getRegionCodes, configuredBookToolHandlers.getRegionCodes);
+  handlerMap.set(bookToolHandlers.getDetailedSubjectCodes, configuredBookToolHandlers.getDetailedSubjectCodes);
+  handlerMap.set(bookToolHandlers.getSubjectCodes, configuredBookToolHandlers.getSubjectCodes);
+  handlerMap.set(bookToolHandlers.searchDetailedKDCCodes, configuredBookToolHandlers.searchDetailedKDCCodes);
+  handlerMap.set(bookToolHandlers.searchDetailedRegionCodes, configuredBookToolHandlers.searchDetailedRegionCodes);
+  handlerMap.set(bookToolHandlers.searchItems, configuredBookToolHandlers.searchItems);
+  handlerMap.set(bookToolHandlers.getManiaRecommendations, configuredBookToolHandlers.getManiaRecommendations);
+  handlerMap.set(bookToolHandlers.getReaderRecommendations, configuredBookToolHandlers.getReaderRecommendations);
+  handlerMap.set(bookToolHandlers.getBookKeywords, configuredBookToolHandlers.getBookKeywords);
+  handlerMap.set(bookToolHandlers.getBookUsageAnalysis, configuredBookToolHandlers.getBookUsageAnalysis);
+  handlerMap.set(bookToolHandlers.searchPopularBooksByLibrary, configuredBookToolHandlers.searchPopularBooksByLibrary);
+  handlerMap.set(bookToolHandlers.getLibraryInfo, configuredBookToolHandlers.getLibraryInfo);
+  handlerMap.set(bookToolHandlers.getPopularBooksByLibrary, configuredBookToolHandlers.getPopularBooksByLibrary);
+  handlerMap.set(bookToolHandlers.searchNearbyLibraries, configuredBookToolHandlers.searchNearbyLibraries);
+
+  // Add all tools to the configured server
+  tools.forEach((tool) => {
+    const configuredHandler = handlerMap.get(tool.handler) || tool.handler;
+    configuredServer.addTool({
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.schema,
+      execute: toolFn(tool.name, configuredHandler as any),
+    });
+  });
+
+  // Add session stats tool
+  configuredServer.addTool({
+    name: "session_stats",
+    description: "현재 세션의 도구 사용량과 통계를 확인합니다.",
+    parameters: z.object({}),
+    execute: toolFn("session_stats", async () => {
+      const usedTools = Object.entries(debugStats.toolCalls);
+      const lines = ["도구 호출 통계 (현재 세션):"];
+
+      const sessionDuration = Math.round(
+        (Date.now() - debugStats.startTime) / 1000
+      );
+      lines.push(`세션 시간: ${sessionDuration}초`);
+      lines.push(`총 호출 수: ${debugStats.sessionCalls}회`);
+
+      lines.push("");
+      lines.push("도구별 호출 횟수:");
+
+      if (usedTools.length === 0) {
+        lines.push("- 아직 호출된 도구가 없습니다.");
+      } else {
+        for (const [name, calls] of usedTools) {
+          lines.push(`- ${name}: ${calls}회`);
+        }
+      }
+
+      return lines.join("\n");
+    }),
+  });
+
+  return configuredServer;
+}
+
+// Export default for Smithery compatibility
+export default createData4LibraryServer;
+
+// 서버 시작 (직접 실행 시에만)
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('index.js')) {
+  server.start({ transportType: "stdio" }).catch((error: any) => {
+    console.error("Fatal error running server:", error);
+    process.exit(1);
+  });
+}
