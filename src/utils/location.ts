@@ -8,15 +8,15 @@ export interface Location {
 }
 
 export interface LibraryWithDistance {
-  libName: string;
-  region: string;
+  id: number;
+  name: string;
+  code: string;
   address: string;
   tel: string;
   fax: string;
   homepage: string;
-  closed: string;
-  operatingTime: string;
-  libCode: string;
+  open_hours: string;
+  closed_info: string;
   latitude: number;
   longitude: number;
   distance: number; // km 단위
@@ -72,18 +72,19 @@ export function addDistanceToLibrary(
   userLat: number,
   userLon: number
 ): LibraryWithDistance | null {
-  // 위도/경도 데이터 추출 (fax, homepage 필드에 저장됨)
-  const latitude = parseFloat(library.fax);
-  const longitude = parseFloat(library.homepage);
-  
+  // 위도/경도 데이터 추출 (새로운 JSON 구조에서 직접 latitude, longitude 필드 사용)
+  const latitude = library.latitude;
+  const longitude = library.longitude;
+
   // 유효한 좌표인지 확인
-  if (isNaN(latitude) || isNaN(longitude)) {
+  if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
+      isNaN(latitude) || isNaN(longitude)) {
     return null;
   }
-  
+
   // 거리 계산
   const distance = calculateDistance(userLat, userLon, latitude, longitude);
-  
+
   return {
     ...library,
     latitude,

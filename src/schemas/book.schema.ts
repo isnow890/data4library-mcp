@@ -389,3 +389,28 @@ export const searchNearbyLibrariesSchema = z.object({
     .optional()
     .describe("반환할 도서관 개수 (기본값: 15, 최대: 100)"),
 });
+
+// 근처 도서관 검색 응답 스키마
+export const nearbyLibraryItemSchema = z.object({
+  libName: z.string().describe("도서관명"),
+  region: z.string().describe("지역 (주소에서 추출)"),
+  address: z.string().describe("도서관 주소"),
+  tel: z.string().describe("전화번호"),
+  operatingTime: z.string().describe("운영시간"),
+  closed: z.string().describe("휴관일 정보"),
+  libCode: z.string().describe("도서관 코드"),
+  latitude: z.number().describe("위도"),
+  longitude: z.number().describe("경도"),
+  distance: z.number().describe("거리 (km)"),
+});
+
+export const searchNearbyLibrariesResponseSchema = z.object({
+  success: z.boolean().describe("검색 성공 여부"),
+  userLocation: z.object({
+    latitude: z.number().describe("사용자 위도"),
+    longitude: z.number().describe("사용자 경도"),
+  }).describe("사용자 위치"),
+  totalFound: z.number().describe("전체 발견된 도서관 수"),
+  returned: z.number().describe("반환된 도서관 수"),
+  libraries: z.array(nearbyLibraryItemSchema).describe("근처 도서관 목록"),
+});
