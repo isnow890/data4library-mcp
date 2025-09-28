@@ -180,13 +180,13 @@ export const createBookToolHandlers = (client: LibraryApiClient) => ({
                 totalFound: librariesWithDistance.length,
                 returned: nearbyLibraries.length,
                 libraries: nearbyLibraries.map(lib => ({
-                    libName: lib.libName,
-                    region: lib.region,
+                    libName: lib.name,
+                    region: lib.address.split(' ').slice(0, 2).join(' '), // Extract region from address
                     address: lib.address,
                     tel: lib.tel,
-                    operatingTime: lib.operatingTime,
-                    closed: lib.closed,
-                    libCode: lib.libCode,
+                    operatingTime: lib.open_hours,
+                    closed: lib.closed_info,
+                    libCode: lib.code,
                     latitude: lib.latitude,
                     longitude: lib.longitude,
                     distance: lib.distance

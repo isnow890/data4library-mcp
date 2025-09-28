@@ -1,6 +1,6 @@
 {
   "name": "@isnow890/data4library-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "FastMCP-powered Book Information MCP Server using 도서관정보나루 (Library Information Gateway) API - Search Korean public libraries, books, popular titles, and library statistics",
   "main": "dist/src/index.js",
   "module": "./src/index.ts",
@@ -8,6 +8,7 @@
   "files": [
     "dist",
     "README.md",
+    "README-en.md",
     "LICENSE"
   ],
   "scripts": {
