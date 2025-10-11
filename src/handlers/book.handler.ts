@@ -4,10 +4,12 @@ import { z } from "zod";
 import * as schemas from "../schemas/book.schema.js";
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { addDistanceToLibrary, sortLibrariesByDistance, LibraryWithDistance } from "../utils/location.js";
 
-// CommonJS에서 __dirname 사용 (빌드 시 cjs 포맷)
-const __dirname = __filename ? dirname(__filename) : process.cwd();
+// Resolve __dirname in ESM runtime
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Zod 스키마 정의
 const getSubjectCodesSchema = z.object({
@@ -197,3 +199,5 @@ export const createBookToolHandlers = (client: LibraryApiClient) => ({
         }
     },
 });
+
+
