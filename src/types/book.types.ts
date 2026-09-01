@@ -110,10 +110,11 @@ export interface UsageTrendResponse {
   }>;
 }
 
-// 도서 소장여부 및 대출 가능여부 응답 타입
+// 도서 소장 여부 및 전일 기준 대출 가능 여부 응답 타입
 export interface BookAvailabilityResponse {
   result?: {
     hasBook?: boolean;
+    /** 정보나루가 제공하는 전일 기준 대출 가능 여부 */
     loanAvailable?: boolean;
   };
 }

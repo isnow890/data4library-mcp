@@ -14,8 +14,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "전국의 공공도서관 정보를 검색합니다.",
       inputSchema: schemas.searchLibrariesSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.searchLibraries(args);
+    async (args, extra) => {
+      const result = await handlers.searchLibraries(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -28,8 +28,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관 소장 도서를 검색합니다.",
       inputSchema: schemas.searchBooksSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.searchBooks(args);
+    async (args, extra) => {
+      const result = await handlers.searchBooks(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -42,8 +42,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "인기대출도서를 조회합니다.",
       inputSchema: schemas.searchPopularBooksSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.searchPopularBooks(args);
+    async (args, extra) => {
+      const result = await handlers.searchPopularBooks(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -81,8 +81,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "ISBN으로 도서의 상세 정보를 조회합니다.",
       inputSchema: schemas.getBookDetailSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getBookDetail(args);
+    async (args, extra) => {
+      const result = await handlers.getBookDetail(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -92,11 +92,12 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
   server.registerTool(
     "check_book_availability",
     {
-      description: "특정 도서관에서 도서의 소장여부 및 대출 가능여부를 조회합니다.",
+      description:
+        "특정 도서관의 도서 소장 여부와 정보나루 전일 기준 대출 가능 여부를 조회합니다.",
       inputSchema: schemas.checkBookAvailabilitySchema.shape,
     },
-    async (args) => {
-      const result = await handlers.checkBookAvailability(args);
+    async (args, extra) => {
+      const result = await handlers.checkBookAvailability(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -109,8 +110,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "대출 급상승 도서를 조회합니다.",
       inputSchema: schemas.getHotTrendSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getHotTrend(args);
+    async (args, extra) => {
+      const result = await handlers.getHotTrend(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -123,8 +124,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "특정 도서를 소장한 도서관을 검색합니다.",
       inputSchema: schemas.searchLibrariesByBookSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.searchLibrariesByBook(args);
+    async (args, extra) => {
+      const result = await handlers.searchLibrariesByBook(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -137,8 +138,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관별 대출반납 추이를 조회합니다.",
       inputSchema: schemas.getUsageTrendSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getUsageTrend(args);
+    async (args, extra) => {
+      const result = await handlers.getUsageTrend(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -151,8 +152,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관별 신착도서를 조회합니다.",
       inputSchema: schemas.getNewArrivalBooksSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getNewArrivalBooks(args);
+    async (args, extra) => {
+      const result = await handlers.getNewArrivalBooks(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -165,8 +166,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "지역별 독서량/독서율을 조회합니다.",
       inputSchema: schemas.getReadingQuantitySchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getReadingQuantity(args);
+    async (args, extra) => {
+      const result = await handlers.getReadingQuantity(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -179,8 +180,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "이달의 키워드를 조회합니다.",
       inputSchema: schemas.getMonthlyKeywordsSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getMonthlyKeywords(args);
+    async (args, extra) => {
+      const result = await handlers.getMonthlyKeywords(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -279,8 +280,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관별 장서/대출 데이터를 조회합니다.",
       inputSchema: schemas.searchItemsSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.searchItems(args);
+    async (args, extra) => {
+      const result = await handlers.searchItems(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -293,8 +294,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "마니아 추천도서를 조회합니다.",
       inputSchema: schemas.getManiaRecommendationsSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getManiaRecommendations(args);
+    async (args, extra) => {
+      const result = await handlers.getManiaRecommendations(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -307,8 +308,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "다독자 추천도서를 조회합니다.",
       inputSchema: schemas.getReaderRecommendationsSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getReaderRecommendations(args);
+    async (args, extra) => {
+      const result = await handlers.getReaderRecommendations(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -321,8 +322,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서 키워드 목록을 조회합니다.",
       inputSchema: schemas.getBookKeywordsSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getBookKeywords(args);
+    async (args, extra) => {
+      const result = await handlers.getBookKeywords(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -335,8 +336,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서별 이용 분석을 조회합니다.",
       inputSchema: schemas.getBookUsageAnalysisSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getBookUsageAnalysis(args);
+    async (args, extra) => {
+      const result = await handlers.getBookUsageAnalysis(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -349,8 +350,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관/지역별 인기대출 도서를 조회합니다.",
       inputSchema: schemas.searchPopularBooksByLibrarySchema.shape,
     },
-    async (args) => {
-      const result = await handlers.searchPopularBooksByLibrary(args);
+    async (args, extra) => {
+      const result = await handlers.searchPopularBooksByLibrary(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -363,8 +364,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관별 통합정보를 조회합니다.",
       inputSchema: schemas.getLibraryInfoSchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getLibraryInfo(args);
+    async (args, extra) => {
+      const result = await handlers.getLibraryInfo(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };
@@ -377,8 +378,8 @@ export function registerAllTools(server: McpServer, client: LibraryApiClient) {
       description: "도서관별 인기대출도서를 조회합니다.",
       inputSchema: schemas.getPopularBooksByLibrarySchema.shape,
     },
-    async (args) => {
-      const result = await handlers.getPopularBooksByLibrary(args);
+    async (args, extra) => {
+      const result = await handlers.getPopularBooksByLibrary(args, extra.signal);
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
       };

@@ -1,45 +1,52 @@
 {
   "name": "@isnow890/data4library-mcp",
-  "version": "1.0.6",
-  "description": "FastMCP-powered Book Information MCP Server using 도서관정보나루 (Library Information Gateway) API - Search Korean public libraries, books, popular titles, and library statistics",
-  "main": "dist/src/index.js",
-  "module": "./src/index.ts",
-  "types": "dist/src/index.d.ts",
+  "version": "1.0.7",
+  "description": "Independent MCP server for the Data4Library Open API",
+  "main": "./dist/src/index.js",
+  "module": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    }
+  },
   "files": [
     "dist",
     "README.md",
     "README-en.md",
+    "assets",
     "LICENSE"
   ],
   "scripts": {
-    "prebuild": "shx rm -rf dist",
+    "prebuild": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "build": "tsc",
-    "postbuild": "shx cp -r src/data dist/src/ && shx cp -r src/data dist/",
+    "postbuild": "node scripts/copy-data.mjs",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "start": "node dist/src/index.js",
     "dev": "npm run build && npm run start",
-    "test": "echo \"Tests coming soon\" && exit 0"
+    "test": "npm run build && node --test test/*.test.mjs",
+    "test:live": "npm run build && node test/live-smoke.mjs",
+    "test:live:all": "npm run build && node test/live-tools-smoke.mjs",
+    "check": "npm test && npm audit"
   },
   "engines": {
     "node": ">=18"
   },
   "dependencies": {
-    "fastmcp": "^3.1.1",
-    "axios": "^1.11.0",
-    "zod": "^3.24.2",
-    "dotenv": "^16.4.5",
-    "@smithery/sdk": "^1.6.6"
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "axios": "^1.20.0",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@types/node": "^22",
-    "shx": "^0.3.4",
     "typescript": "^5.3.3"
   },
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "fastmcp",
     "library",
     "books",
     "korean-library",

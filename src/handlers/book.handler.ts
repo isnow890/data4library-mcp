@@ -2,14 +2,8 @@ import { LibraryApiClient } from "../clients/library-api.client.js";
 import { REGION_CODES, KDC_SUBJECT_CODES } from "../constants/codes.js";
 import { z } from "zod";
 import * as schemas from "../schemas/book.schema.js";
-import { readFileSync } from "node:fs";
-import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
 import { addDistanceToLibrary, sortLibrariesByDistance, LibraryWithDistance } from "../utils/location.js";
-
-// Resolve __dirname in ESM runtime
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { loadLibraryData } from "../utils/library-data.js";
 
 // Zod 스키마 정의
 const getSubjectCodesSchema = z.object({
@@ -18,38 +12,38 @@ const getSubjectCodesSchema = z.object({
 
 // 핸들러 생성자
 export const createBookToolHandlers = (client: LibraryApiClient) => ({
-    searchLibraries: async (args: z.infer<typeof schemas.searchLibrariesSchema>) => {
-        return await client.searchLibraries(args);
+    searchLibraries: async (args: z.infer<typeof schemas.searchLibrariesSchema>, signal?: AbortSignal) => {
+        return await client.searchLibraries(args, { signal });
     },
-    searchBooks: async (args: z.infer<typeof schemas.searchBooksSchema>) => {
-        return await client.searchBooks(args);
+    searchBooks: async (args: z.infer<typeof schemas.searchBooksSchema>, signal?: AbortSignal) => {
+        return await client.searchBooks(args, { signal });
     },
-    searchPopularBooks: async (args: z.infer<typeof schemas.searchPopularBooksSchema>) => {
-        return await client.searchPopularBooks(args);
+    searchPopularBooks: async (args: z.infer<typeof schemas.searchPopularBooksSchema>, signal?: AbortSignal) => {
+        return await client.searchPopularBooks(args, { signal });
     },
-    getBookDetail: async (args: z.infer<typeof schemas.getBookDetailSchema>) => {
-        return await client.getBookDetail(args);
+    getBookDetail: async (args: z.infer<typeof schemas.getBookDetailSchema>, signal?: AbortSignal) => {
+        return await client.getBookDetail(args, { signal });
     },
-    checkBookAvailability: async (args: z.infer<typeof schemas.checkBookAvailabilitySchema>) => {
-        return await client.checkBookAvailability(args);
+    checkBookAvailability: async (args: z.infer<typeof schemas.checkBookAvailabilitySchema>, signal?: AbortSignal) => {
+        return await client.checkBookAvailability(args, { signal });
     },
-    getHotTrend: async (args: z.infer<typeof schemas.getHotTrendSchema>) => {
-        return await client.getHotTrend(args);
+    getHotTrend: async (args: z.infer<typeof schemas.getHotTrendSchema>, signal?: AbortSignal) => {
+        return await client.getHotTrend(args, { signal });
     },
-    searchLibrariesByBook: async (args: z.infer<typeof schemas.searchLibrariesByBookSchema>) => {
-        return await client.searchLibrariesByBook(args);
+    searchLibrariesByBook: async (args: z.infer<typeof schemas.searchLibrariesByBookSchema>, signal?: AbortSignal) => {
+        return await client.searchLibrariesByBook(args, { signal });
     },
-    getUsageTrend: async (args: z.infer<typeof schemas.getUsageTrendSchema>) => {
-        return await client.getUsageTrend(args);
+    getUsageTrend: async (args: z.infer<typeof schemas.getUsageTrendSchema>, signal?: AbortSignal) => {
+        return await client.getUsageTrend(args, { signal });
     },
-    getNewArrivalBooks: async (args: z.infer<typeof schemas.getNewArrivalBooksSchema>) => {
-        return await client.getNewArrivalBooks(args);
+    getNewArrivalBooks: async (args: z.infer<typeof schemas.getNewArrivalBooksSchema>, signal?: AbortSignal) => {
+        return await client.getNewArrivalBooks(args, { signal });
     },
-    getReadingQuantity: async (args: z.infer<typeof schemas.getReadingQuantitySchema>) => {
-        return await client.getReadingQuantity(args);
+    getReadingQuantity: async (args: z.infer<typeof schemas.getReadingQuantitySchema>, signal?: AbortSignal) => {
+        return await client.getReadingQuantity(args, { signal });
     },
-    getMonthlyKeywords: async (args: z.infer<typeof schemas.getMonthlyKeywordsSchema>) => {
-        return await client.getMonthlyKeywords(args);
+    getMonthlyKeywords: async (args: z.infer<typeof schemas.getMonthlyKeywordsSchema>, signal?: AbortSignal) => {
+        return await client.getMonthlyKeywords(args, { signal });
     },
     searchLibraryCodes: async (args: z.infer<typeof schemas.searchLibraryCodesSchema>) => {
         return await client.searchLibraryCodes(args);
@@ -75,7 +69,7 @@ export const createBookToolHandlers = (client: LibraryApiClient) => ({
                 majorCode: args.majorCode,
                 category:
                     KDC_SUBJECT_CODES[args.majorCode as keyof typeof KDC_SUBJECT_CODES],
-                usage: 'dtl_kdc 파라미터에 3자리 코드(예: "100", "320")를 사용하세요.',
+                usage: 'dtl_kdc 파라미터에 2자리 코드(예: "81", "32")를 사용하세요.',
             };
         }
 
@@ -91,65 +85,33 @@ export const createBookToolHandlers = (client: LibraryApiClient) => ({
     searchDetailedRegionCodes: async (args: z.infer<typeof schemas.searchDetailedRegionCodesSchema>) => {
         return await client.searchDetailedRegionCodes(args);
     },
-    searchItems: async (args: z.infer<typeof schemas.searchItemsSchema>) => {
-        return await client.searchItems(args);
+    searchItems: async (args: z.infer<typeof schemas.searchItemsSchema>, signal?: AbortSignal) => {
+        return await client.searchItems(args, { signal });
     },
-    getManiaRecommendations: async (args: z.infer<typeof schemas.getManiaRecommendationsSchema>) => {
-        return await client.getManiaRecommendations(args.isbn13);
+    getManiaRecommendations: async (args: z.infer<typeof schemas.getManiaRecommendationsSchema>, signal?: AbortSignal) => {
+        return await client.getManiaRecommendations(args.isbn13, { signal });
     },
-    getReaderRecommendations: async (args: z.infer<typeof schemas.getReaderRecommendationsSchema>) => {
-        return await client.getReaderRecommendations(args.isbn13);
+    getReaderRecommendations: async (args: z.infer<typeof schemas.getReaderRecommendationsSchema>, signal?: AbortSignal) => {
+        return await client.getReaderRecommendations(args.isbn13, { signal });
     },
-    getBookKeywords: async (args: z.infer<typeof schemas.getBookKeywordsSchema>) => {
-        return await client.getBookKeywords(args.isbn13, args.additionalYN);
+    getBookKeywords: async (args: z.infer<typeof schemas.getBookKeywordsSchema>, signal?: AbortSignal) => {
+        return await client.getBookKeywords(args.isbn13, args.additionalYN, { signal });
     },
-    getBookUsageAnalysis: async (args: z.infer<typeof schemas.getBookUsageAnalysisSchema>) => {
-        return await client.getBookUsageAnalysis(args.isbn13);
+    getBookUsageAnalysis: async (args: z.infer<typeof schemas.getBookUsageAnalysisSchema>, signal?: AbortSignal) => {
+        return await client.getBookUsageAnalysis(args.isbn13, { signal });
     },
-    searchPopularBooksByLibrary: async (args: z.infer<typeof schemas.searchPopularBooksByLibrarySchema>) => {
-        return await client.searchPopularBooksByLibrary(args);
+    searchPopularBooksByLibrary: async (args: z.infer<typeof schemas.searchPopularBooksByLibrarySchema>, signal?: AbortSignal) => {
+        return await client.searchPopularBooksByLibrary(args, { signal });
     },
-    getLibraryInfo: async (args: z.infer<typeof schemas.getLibraryInfoSchema>) => {
-        return await client.getLibraryInfo(args);
+    getLibraryInfo: async (args: z.infer<typeof schemas.getLibraryInfoSchema>, signal?: AbortSignal) => {
+        return await client.getLibraryInfo(args, { signal });
     },
-    getPopularBooksByLibrary: async (args: z.infer<typeof schemas.getPopularBooksByLibrarySchema>) => {
-        return await client.getPopularBooksByLibrary(args.libCode);
+    getPopularBooksByLibrary: async (args: z.infer<typeof schemas.getPopularBooksByLibrarySchema>, signal?: AbortSignal) => {
+        return await client.getPopularBooksByLibrary(args.libCode, { signal });
     },
     searchNearbyLibraries: async (args: { latitude: number; longitude: number; count?: number }) => {
         try {
-            // 도서관 데이터 파일 로드
-            let librariesData: any[] = [];
-            
-            const possiblePaths = [
-                join(process.cwd(), "dist/data/libraries.json"),
-                join(process.cwd(), "dist/src/data/libraries.json"),
-                join(process.cwd(), "src/data/libraries.json"),
-                join(__dirname, "../data/libraries.json"),
-                join(__dirname, "../../data/libraries.json"),
-                join(__dirname, "data/libraries.json")
-            ];
-
-            let fileLoaded = false;
-            let lastError: any;
-
-            for (const filePath of possiblePaths) {
-                try {
-                    const fileContent = readFileSync(filePath, "utf-8");
-                    librariesData = JSON.parse(fileContent);
-                    fileLoaded = true;
-                    console.error(`[search_nearby_libraries] Successfully loaded data from: ${filePath}`);
-                    break;
-                } catch (error) {
-                    lastError = error;
-                    console.error(`[search_nearby_libraries] Failed to load from: ${filePath}`);
-                    continue;
-                }
-            }
-
-            if (!fileLoaded) {
-                console.error(`[search_nearby_libraries] All paths failed. CWD: ${process.cwd()}, __dirname: ${__dirname}`);
-                throw new Error(`도서관 데이터를 로드할 수 없습니다: ${lastError?.message || 'Unknown error'}`);
-            }
+            const librariesData = loadLibraryData();
 
             // 각 도서관에 거리 정보 추가
             const librariesWithDistance: LibraryWithDistance[] = [];

@@ -1,81 +1,130 @@
-import axios, { AxiosRequestConfig } from "axios";
-import { readFileSync } from "fs";
-import { join } from "path";
-import { REGION_CODES, KDC_SUBJECT_CODES, DETAILED_KDC_CODES, DETAILED_REGION_CODES, type RegionCode, type SubjectCode, type DetailedKDCCode, type DetailedRegionCode } from "../constants/codes.js";
+import axios, { type AxiosInstance } from "axios";
+import {
+  DETAILED_KDC_CODES,
+  DETAILED_REGION_CODES,
+  KDC_SUBJECT_CODES,
+  REGION_CODES,
+  type RegionCode,
+  type SubjectCode,
+} from "../constants/codes.js";
+import { loadLibraryData, type LibraryDataRecord } from "../utils/library-data.js";
 
-// 도서관 정보를 담은 JSON 파일 로드 (bundled environment 호환)
-let libraries: any[];
-
-try {
-  // 번들된 환경에서는 현재 작업 디렉토리 기준으로 찾기
-  libraries = JSON.parse(readFileSync(join(process.cwd(), "data", "libraries.json"), "utf-8"));
-} catch {
-  try {
-    // 개발 환경에서는 dist 폴더 기준으로 찾기
-    libraries = JSON.parse(readFileSync(join(process.cwd(), "dist", "src", "data", "libraries.json"), "utf-8"));
-  } catch {
-    // 최종 fallback: 빈 배열
-    libraries = [];
-  }
-}
+export const DEFAULT_API_TIMEOUT_MS = 10_000;
+const MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
 
 export interface LibraryApiConfig {
   apiKey: string;
   baseUrl?: string;
+  timeoutMs?: number;
 }
 
 export interface SearchParams {
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+export interface ApiRequestOptions {
+  signal?: AbortSignal;
+}
+
+export class Data4LibraryRequestError extends Error {
+  readonly endpoint: string;
+  readonly code?: string;
+  readonly status?: number;
+
+  constructor(message: string, endpoint: string, code?: string, status?: number) {
+    super(message);
+    this.name = "Data4LibraryRequestError";
+    this.endpoint = endpoint;
+    this.code = code;
+    this.status = status;
+  }
+}
+
+function normalizeBaseUrl(value: string): string {
+  const url = new URL(value);
+  const isLoopback =
+    url.hostname === "localhost" ||
+    url.hostname === "127.0.0.1" ||
+    url.hostname === "[::1]";
+
+  if (url.protocol !== "https:" && !(url.protocol === "http:" && isLoopback)) {
+    throw new Error("도서관정보나루 API는 HTTPS로만 연결할 수 있습니다.");
+  }
+
+  return url.toString().replace(/\/$/, "");
 }
 
 /**
  * 도서관 정보 API 클라이언트
  */
 export class LibraryApiClient {
-  private baseUrl: string;
-  private apiKey: string;
-  private libraries: any[];
+  private readonly apiKey: string;
+  private readonly http: AxiosInstance;
+  private readonly libraries: readonly LibraryDataRecord[];
 
   constructor(config: LibraryApiConfig) {
-    this.baseUrl = config.baseUrl || "http://data4library.kr";
+    const timeoutMs = config.timeoutMs ?? DEFAULT_API_TIMEOUT_MS;
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 50 || timeoutMs > 60_000) {
+      throw new Error("API 타임아웃은 50~60000ms 사이의 정수여야 합니다.");
+    }
+
     this.apiKey = config.apiKey;
-    this.libraries = libraries;
-  }
-
-
-  /**
-   * API 요청 헤더 생성
-   */
-  private getHeaders(contentType: string = "application/json"): AxiosRequestConfig {
-    return {
-      headers: {
-        "Content-Type": contentType,
-      },
-    };
+    this.libraries = loadLibraryData();
+    this.http = axios.create({
+      baseURL: normalizeBaseUrl(config.baseUrl ?? "https://data4library.kr"),
+      timeout: timeoutMs,
+      maxContentLength: MAX_RESPONSE_BYTES,
+      maxBodyLength: MAX_RESPONSE_BYTES,
+    });
   }
 
   /**
    * GET 요청
    */
-  private async get<T>(url: string, params: SearchParams = {}): Promise<T> {
+  private async get<T>(
+    endpoint: string,
+    params: SearchParams = {},
+    options: ApiRequestOptions = {},
+  ): Promise<T> {
     // API 키가 없는 경우 에러 처리
     if (!this.apiKey) {
       throw new Error("API 키가 설정되지 않았습니다. LIBRARY_API_KEY 환경변수를 설정해주세요.");
     }
     
-    // API 키와 JSON 형식 요청 추가
-    params.authKey = this.apiKey;
-    params.format = 'json';
-    
     try {
-      const response = await axios.get<T>(url, { 
-        params, 
-        ...this.getHeaders() 
+      const response = await this.http.get<T>(endpoint, {
+        params: {
+          ...params,
+          authKey: this.apiKey,
+          format: "json",
+        },
+        signal: options.signal,
       });
       return response.data;
     } catch (error) {
-      console.error(`API 요청 실패: ${url}`, error);
-      throw error;
+      const code = axios.isAxiosError(error) ? error.code : undefined;
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const timedOut = code === "ECONNABORTED" || code === "ETIMEDOUT";
+      const cancelled = code === "ERR_CANCELED";
+      const reason = timedOut
+        ? "시간 초과"
+        : cancelled
+          ? "요청 취소"
+          : status
+            ? `HTTP ${status}`
+            : "네트워크 오류";
+
+      console.error("[data4library] API request failed", {
+        endpoint,
+        code: code ?? "UNKNOWN",
+        status: status ?? null,
+      });
+      throw new Data4LibraryRequestError(
+        `도서관정보나루 API 요청 실패: ${reason}`,
+        endpoint,
+        code,
+        status,
+      );
     }
   }
 
@@ -83,157 +132,138 @@ export class LibraryApiClient {
   /**
    * 도서관 목록 조회
    */
-  async searchLibraries(params: SearchParams = {}) {
-    const url = `${this.baseUrl}/api/libSrch`;
-    return this.get(url, params);
+  async searchLibraries(params: SearchParams = {}, options: ApiRequestOptions = {}) {
+    return this.get("/api/libSrch", params, options);
   }
 
   /**
    * 도서관별 장서/대출 데이터 조회
    */
-  async searchItems(params: SearchParams) {
+  async searchItems(params: SearchParams, options: ApiRequestOptions = {}) {
     if (!params.libCode) {
       throw new Error("libCode는 필수 파라미터입니다.");
     }
     
-    const url = `${this.baseUrl}/api/itemSrch`;
-    return this.get(url, params);
+    return this.get("/api/itemSrch", params, options);
   }
 
   /**
    * 인기대출도서 조회
    */
-  async searchPopularBooks(params: SearchParams = {}) {
-    const url = `${this.baseUrl}/api/loanItemSrch`;
-    return this.get(url, params);
+  async searchPopularBooks(params: SearchParams = {}, options: ApiRequestOptions = {}) {
+    return this.get("/api/loanItemSrch", params, options);
   }
 
   /**
    * 마니아를 위한 추천도서 조회
    */
-  async getManiaRecommendations(isbn13: string) {
-    const url = `${this.baseUrl}/api/recommandList`;
-    return this.get(url, { isbn13, type: "mania" });
+  async getManiaRecommendations(isbn13: string, options: ApiRequestOptions = {}) {
+    return this.get("/api/recommandList", { isbn13, type: "mania" }, options);
   }
 
   /**
    * 다독자를 위한 추천도서 조회
    */
-  async getReaderRecommendations(isbn13: string) {
-    const url = `${this.baseUrl}/api/recommandList`;
-    return this.get(url, { isbn13, type: "reader" });
+  async getReaderRecommendations(isbn13: string, options: ApiRequestOptions = {}) {
+    return this.get("/api/recommandList", { isbn13, type: "reader" }, options);
   }
 
   /**
    * 도서 상세 조회
    */
-  async getBookDetail(params: SearchParams & { isbn13: string }) {
-    const url = `${this.baseUrl}/api/srchDtlList`;
-    return this.get(url, params);
+  async getBookDetail(params: SearchParams & { isbn13: string }, options: ApiRequestOptions = {}) {
+    return this.get("/api/srchDtlList", params, options);
   }
 
   /**
    * 도서 키워드 목록
    */
-  async getBookKeywords(isbn13: string, additionalYN: string = "N") {
-    const url = `${this.baseUrl}/api/keywordList`;
-    return this.get(url, { isbn13, additionalYN });
+  async getBookKeywords(isbn13: string, additionalYN: string = "N", options: ApiRequestOptions = {}) {
+    return this.get("/api/keywordList", { isbn13, additionalYN }, options);
   }
 
   /**
    * 도서별 이용 분석
    */
-  async getBookUsageAnalysis(isbn13: string) {
-    const url = `${this.baseUrl}/api/usageAnalysisList`;
-    return this.get(url, { isbn13 });
+  async getBookUsageAnalysis(isbn13: string, options: ApiRequestOptions = {}) {
+    return this.get("/api/usageAnalysisList", { isbn13 }, options);
   }
 
   /**
    * 도서관/지역별 인기대출 도서 조회
    */
-  async searchPopularBooksByLibrary(params: SearchParams) {
-    const url = `${this.baseUrl}/api/loanItemSrchByLib`;
-    return this.get(url, params);
+  async searchPopularBooksByLibrary(params: SearchParams, options: ApiRequestOptions = {}) {
+    return this.get("/api/loanItemSrchByLib", params, options);
   }
 
   /**
    * 도서관별 대출반납추이
    */
-  async getUsageTrend(params: SearchParams & { libCode: string; type: string }) {
-    const url = `${this.baseUrl}/api/usageTrend`;
-    return this.get(url, params);
+  async getUsageTrend(params: SearchParams & { libCode: string; type: string }, options: ApiRequestOptions = {}) {
+    return this.get("/api/usageTrend", params, options);
   }
 
   /**
-   * 도서관별 도서 소장여부 및 대출 가능여부 조회
+   * 도서관별 도서 소장 여부 및 전일 기준 대출 가능 여부 조회
    */
-  async checkBookAvailability(params: SearchParams & { libCode: string; isbn13: string }) {
-    const url = `${this.baseUrl}/api/bookExist`;
-    return this.get(url, params);
+  async checkBookAvailability(params: SearchParams & { libCode: string; isbn13: string }, options: ApiRequestOptions = {}) {
+    return this.get("/api/bookExist", params, options);
   }
 
   /**
    * 대출 급상승 도서
    */
-  async getHotTrend(params: SearchParams & { searchDt: string }) {
-    const url = `${this.baseUrl}/api/hotTrend`;
-    return this.get(url, params);
+  async getHotTrend(params: SearchParams & { searchDt: string }, options: ApiRequestOptions = {}) {
+    return this.get("/api/hotTrend", params, options);
   }
 
   /**
    * 도서 소장 도서관 조회
    */
-  async searchLibrariesByBook(params: SearchParams & { isbn: string; region: string }) {
-    const url = `${this.baseUrl}/api/libSrchByBook`;
-    return this.get(url, params);
+  async searchLibrariesByBook(params: SearchParams & { isbn: string; region: string }, options: ApiRequestOptions = {}) {
+    return this.get("/api/libSrchByBook", params, options);
   }
 
   /**
    * 도서관별 통합정보
    */
-  async getLibraryInfo(params: SearchParams = {}) {
-    const url = `${this.baseUrl}/api/extends/libSrch`;
-    return this.get(url, params);
+  async getLibraryInfo(params: SearchParams = {}, options: ApiRequestOptions = {}) {
+    return this.get("/api/extends/libSrch", params, options);
   }
 
   /**
    * 도서관별 인기대출도서 통합
    */
-  async getPopularBooksByLibrary(libCode: string) {
-    const url = `${this.baseUrl}/api/extends/loanItemSrchByLib`;
-    return this.get(url, { libCode });
+  async getPopularBooksByLibrary(libCode: string, options: ApiRequestOptions = {}) {
+    return this.get("/api/extends/loanItemSrchByLib", { libCode }, options);
   }
 
   /**
    * 도서 검색
    */
-  async searchBooks(params: SearchParams) {
-    const url = `${this.baseUrl}/api/srchBooks`;
-    return this.get(url, params);
+  async searchBooks(params: SearchParams, options: ApiRequestOptions = {}) {
+    return this.get("/api/srchBooks", params, options);
   }
 
   /**
    * 이달의 키워드
    */
-  async getMonthlyKeywords(params: SearchParams = {}) {
-    const url = `${this.baseUrl}/api/monthlyKeywords`;
-    return this.get(url, params);
+  async getMonthlyKeywords(params: SearchParams = {}, options: ApiRequestOptions = {}) {
+    return this.get("/api/monthlyKeywords", params, options);
   }
 
   /**
    * 지역별 독서량/독서율
    */
-  async getReadingQuantity(params: SearchParams = {}) {
-    const url = `${this.baseUrl}/api/readQt`;
-    return this.get(url, params);
+  async getReadingQuantity(params: SearchParams = {}, options: ApiRequestOptions = {}) {
+    return this.get("/api/readQt", params, options);
   }
 
   /**
    * 신착도서 조회
    */
-  async getNewArrivalBooks(params: SearchParams & { libCode: string }) {
-    const url = `${this.baseUrl}/api/newArrivalBook`;
-    return this.get(url, params);
+  async getNewArrivalBooks(params: SearchParams & { libCode: string }, options: ApiRequestOptions = {}) {
+    return this.get("/api/newArrivalBook", params, options);
   }
 
   /**
@@ -304,11 +334,21 @@ export class LibraryApiClient {
       throw new Error(`Invalid region code: ${params.region}`);
     }
 
+    const regions = Object.entries(DETAILED_REGION_CODES)
+      .filter(([code]) => code.startsWith(params.region))
+      .map(([code, info]) => ({
+        code,
+        province: info.province,
+        district: info.district,
+        fullName: `${info.province} ${info.district}`,
+      }));
+
     return {
       region: params.region,
       regionName,
-      usage: 'API에서 지원하는 세부 지역 코드는 API 문서를 참조하세요.',
-      note: '세부 지역 코드는 도서관정보나루 API 문서에서 확인 가능합니다.'
+      count: regions.length,
+      regions,
+      usage: "API 호출 시 dtl_region 파라미터에 code 값을 사용하세요.",
     };
   }
 
@@ -322,10 +362,16 @@ export class LibraryApiClient {
       throw new Error(`Invalid KDC code: ${params.kdc}`);
     }
 
+    const subjects = Object.entries(DETAILED_KDC_CODES)
+      .filter(([code]) => code.startsWith(params.kdc))
+      .map(([code, name]) => ({ code, name }));
+
     return {
       kdc: params.kdc,
       subjectInfo,
-      usage: 'dtl_kdc 파라미터에 3자리 세부주제코드를 사용하세요.'
+      count: subjects.length,
+      subjects,
+      usage: "API 호출 시 dtl_kdc 파라미터에 2자리 code 값을 사용하세요.",
     };
   }
 

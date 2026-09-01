@@ -1,30 +1,68 @@
 import { z } from "zod";
 
+const pageNumberSchema = z.number().int().min(1).max(100_000);
+const pageSizeSchema = z.number().int().min(1).max(1_000);
+const libraryCodeSchema = z.string().regex(/^\d{6}$/, "도서관코드는 6자리 숫자여야 합니다.");
+const isbn13Schema = z.string().regex(/^\d{13}$/, "ISBN은 13자리 숫자여야 합니다.");
+const isbn10Or13Pattern = /^(?:\d{9}[\dXx]|\d{13})$/;
+const isbn10Or13Schema = z
+  .string()
+  .regex(isbn10Or13Pattern, "ISBN은 10자리 또는 13자리여야 합니다.");
+const isbnListSchema = z.string().superRefine((value, context) => {
+  const values = value.split(";");
+  if (values.length === 0 || values.length > 20 || values.some((isbn) => !isbn10Or13Pattern.test(isbn))) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "ISBN은 10자리 또는 13자리이며, 여러 권은 세미콜론으로 최대 20개까지 구분합니다.",
+    });
+  }
+});
+const regionCodeSchema = z.enum([
+  "11", "21", "22", "23", "24", "25", "26", "29", "31",
+  "32", "33", "34", "35", "36", "37", "38", "39",
+]);
+const detailedRegionCodeSchema = z.string().regex(/^\d{5}$/, "세부지역코드는 5자리 숫자여야 합니다.");
+const kdcCodeSchema = z.string().regex(/^\d$/, "KDC 대분류는 0~9 한 자리여야 합니다.");
+const detailedKdcCodeSchema = z.string().regex(/^\d{2}$/, "KDC 세부주제는 2자리여야 합니다.");
+
+function isValidDate(value: string): boolean {
+  const [year, month, day] = value.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+
+const dateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "날짜는 YYYY-MM-DD 형식이어야 합니다.")
+  .refine(isValidDate, "유효한 날짜를 입력해야 합니다.");
+const yearMonthSchema = z
+  .string()
+  .regex(/^\d{4}-(?:0[1-9]|1[0-2])$/, "월은 YYYY-MM 형식이어야 합니다.");
+const yearSchema = z.string().regex(/^\d{4}$/, "연도는 YYYY 형식이어야 합니다.");
+const monthSchema = z.string().regex(/^(?:0[1-9]|1[0-2])$/, "월은 MM 형식이어야 합니다.");
+
 // 도서관 목록 조회 스키마
 export const searchLibrariesSchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .optional()
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
-  region: z
-    .string()
+  region: regionCodeSchema
     .optional()
     .describe(
       "지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
-  dtl_region: z
-    .string()
+  dtl_region: detailedRegionCodeSchema
     .optional()
     .describe("세부지역코드 - search_detailed_region_codes 도구로 검색하세요"),
-  pageNo: z.number().optional().describe("페이지번호"),
-  pageSize: z.number().optional().describe("페이지크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지크기 (최대 1000)"),
 });
 
 // 도서 검색 스키마
 export const searchBooksSchema = z.object({
   title: z.string().optional().describe("도서명"),
   author: z.string().optional().describe("저자명"),
-  isbn13: z.string().optional().describe("13자리 ISBN"),
+  isbn13: isbn13Schema.optional().describe("13자리 ISBN"),
   keyword: z.string().optional().describe("키워드"),
   publisher: z.string().optional().describe("출판사"),
   sort: z
@@ -41,37 +79,33 @@ export const searchBooksSchema = z.object({
     .boolean()
     .optional()
     .describe("일치검색여부 (true=완전일치, false=부분일치)"),
-  pageNo: z.number().optional().describe("페이지번호"),
-  pageSize: z.number().optional().describe("페이지크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지크기 (최대 1000)"),
 });
 
 // 인기대출도서 조회 스키마
 export const searchPopularBooksSchema = z.object({
-  startDt: z
-    .string()
+  startDt: dateSchema
     .optional()
     .describe("검색시작일자 (대출기간) - YYYY-MM-DD 형식"),
-  endDt: z
-    .string()
+  endDt: dateSchema
     .optional()
     .describe("검색종료일자 (대출기간) - YYYY-MM-DD 형식"),
-  gender: z.string().optional().describe("성별코드 (0=남성, 1=여성, 2=미상)"),
-  from_age: z.number().optional().describe("시작연령"),
-  to_age: z.number().optional().describe("종료연령"),
+  gender: z.enum(["0", "1", "2"]).optional().describe("성별코드 (0=남성, 1=여성, 2=미상)"),
+  from_age: z.number().int().min(0).max(120).optional().describe("시작연령"),
+  to_age: z.number().int().min(0).max(120).optional().describe("종료연령"),
   age: z
-    .string()
+    .enum(["0", "6", "8", "14", "20", "30", "40", "50", "60", "a8", "a10", "a12", "a14", "a17"])
     .optional()
     .describe(
-      "연령코드 (0=영유아, 6=유아, 8=초등, 14=청소년, 20=20대, 30=30대, 40=40대, 50=50대, 60=60세이상)"
+      "연령코드 (0=영유아, 6=유아, 8=초등, 14=청소년, 20~60=연령대, a8/a10/a12=초등 학년군, a14=중등, a17=고등)"
     ),
-  region: z
-    .string()
+  region: regionCodeSchema
     .optional()
     .describe(
       "지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
-  dtl_region: z
-    .string()
+  dtl_region: detailedRegionCodeSchema
     .optional()
     .describe("세부지역코드 - search_detailed_region_codes 도구로 검색하세요"),
   book_dvsn: z
@@ -79,28 +113,26 @@ export const searchPopularBooksSchema = z.object({
     .optional()
     .describe("도서구분 (big=큰글씨도서, oversea=국외도서)"),
   addCode: z
-    .string()
+    .enum(["0", "1", "2", "4", "5", "6", "7", "9"])
     .optional()
     .describe(
       "ISBN부가기호 (0=교양, 1=실용, 2=여성, 4=청소년, 5=학습참고서(중고), 6=학습참고서(초등), 7=아동, 9=전문)"
     ),
-  kdc: z
-    .string()
+  kdc: kdcCodeSchema
     .optional()
     .describe(
       "대주제분류 (0=총류, 1=철학, 2=종교, 3=사회과학, 4=자연과학, 5=기술과학, 6=예술, 7=언어, 8=문학, 9=역사)"
     ),
-  dtl_kdc: z
-    .string()
+  dtl_kdc: detailedKdcCodeSchema
     .optional()
     .describe("세부주제코드 - search_detailed_kdc_codes 도구로 검색하세요"),
-  pageNo: z.number().optional().describe("페이지번호"),
-  pageSize: z.number().optional().describe("페이지크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지크기 (최대 1000)"),
 });
 
 // 도서 상세 조회 스키마
 export const getBookDetailSchema = z.object({
-  isbn13: z.string().describe("13자리 ISBN"),
+  isbn13: isbn13Schema.describe("13자리 ISBN"),
   loaninfoYN: z
     .enum(["Y", "N"])
     .optional()
@@ -111,70 +143,63 @@ export const getBookDetailSchema = z.object({
     .describe("대출정보 조회대상 (gender=성별, age=연령별, region=지역별)"),
 });
 
-// 도서관별 도서 소장여부 및 대출 가능여부 조회 스키마
+// 도서관별 도서 소장 여부 및 전일 기준 대출 가능 여부 조회 스키마
 export const checkBookAvailabilitySchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
-  isbn13: z.string().describe("13자리 ISBN"),
+  isbn13: isbn13Schema.describe("13자리 ISBN"),
 });
 
 // 대출 급상승 도서 스키마
 export const getHotTrendSchema = z.object({
-  searchDt: z.string().describe("검색일자 (YYYY-MM-DD 형식)"),
+  searchDt: dateSchema.describe("검색일자 (YYYY-MM-DD 형식)"),
 });
 
 // 도서 소장 도서관 조회 스키마
 export const searchLibrariesByBookSchema = z.object({
-  isbn: z.string().describe("13자리 ISBN"),
-  region: z
-    .string()
+  isbn: isbn10Or13Schema.describe("10자리 또는 13자리 ISBN"),
+  region: regionCodeSchema
     .describe(
       "지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
-  dtl_region: z
-    .string()
+  dtl_region: detailedRegionCodeSchema
     .optional()
     .describe("세부지역코드 - search_detailed_region_codes 도구로 검색하세요"),
-  pageNo: z.number().optional().describe("페이지 번호"),
-  pageSize: z.number().optional().describe("페이지 크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지 번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지 크기 (최대 1000)"),
 });
 
 // 도서관별 대출반납추이 스키마
 export const getUsageTrendSchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
   type: z.enum(["D", "H"]).describe("조회기준 (D=요일별, H=시간대별)"),
 });
 
 // 신착도서 조회 스키마
 export const getNewArrivalBooksSchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
-  searchDt: z.string().optional().describe("검색일자 (YYYY-MM 형식)"),
+  searchDt: yearMonthSchema.optional().describe("검색일자 (YYYY-MM 형식)"),
 });
 
 // 지역별 독서량/독서율 스키마
 export const getReadingQuantitySchema = z.object({
-  region: z
-    .string()
+  region: regionCodeSchema
     .optional()
     .describe(
       "지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
-  dtl_region: z
-    .string()
+  dtl_region: detailedRegionCodeSchema
     .optional()
     .describe("세부지역코드 - search_detailed_region_codes 도구로 검색하세요"),
-  year: z.string().optional().describe("분석연도 (YYYY 형식)"),
-  month: z.string().optional().describe("분석월 (MM 형식)"),
+  year: yearSchema.optional().describe("분석연도 (YYYY 형식)"),
+  month: monthSchema.optional().describe("분석월 (MM 형식)"),
 });
 
 // 이달의 키워드 스키마
 export const getMonthlyKeywordsSchema = z.object({
-  month: z.string().optional().describe("검색월 (YYYY-MM 형식)"),
+  month: yearMonthSchema.optional().describe("검색월 (YYYY-MM 형식)"),
 });
 
 // 도서관 코드 검색 스키마
@@ -183,19 +208,18 @@ export const searchLibraryCodesSchema = z.object({
     .string()
     .optional()
     .describe(
-      "도서관명으로 검색 (부분 검색 및 유사검색 지원, 예: '중앙도서관', '강남', '시립') - 오타나 불완전한 이름도 검색 가능"
+      "도서관명 또는 코드의 일부로 검색 (예: '중앙도서관', '강남', '시립')"
     ),
   regionName: z
     .string()
     .optional()
     .describe("지역명으로 검색 (예: 서울, 강남구, 부산, 경기도)"),
-  limit: z.number().optional().default(20).describe("최대 검색 결과 수"),
+  limit: z.number().int().min(1).max(100).optional().default(20).describe("최대 검색 결과 수 (1~100)"),
 });
 
 // 세부지역 코드 조회 스키마
 export const getDetailedRegionCodesSchema = z.object({
-  region: z
-    .string()
+  region: regionCodeSchema
     .describe(
       "상위 지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
@@ -203,8 +227,7 @@ export const getDetailedRegionCodesSchema = z.object({
 
 // 세부주제 코드 조회 스키마
 export const getDetailedSubjectCodesSchema = z.object({
-  kdc: z
-    .string()
+  kdc: kdcCodeSchema
     .describe(
       "대주제분류코드 (0=총류, 1=철학, 2=종교, 3=사회과학, 4=자연과학, 5=기술과학, 6=예술, 7=언어, 8=문학, 9=역사)"
     ),
@@ -216,7 +239,7 @@ export const searchDetailedKDCCodesSchema = z.object({
     .string()
     .optional()
     .describe("검색할 주제 키워드 (예: '의학', '컴퓨터', '문학', '역사')"),
-  majorCode: z.string().optional().describe("대분류 코드 (0-9)로 필터링"),
+  majorCode: kdcCodeSchema.optional().describe("대분류 코드 (0-9)로 필터링"),
   limit: z
     .number()
     .min(1)
@@ -231,8 +254,7 @@ export const searchDetailedRegionCodesSchema = z.object({
     .string()
     .optional()
     .describe("검색할 지역 키워드 (예: '강남', '부산', '수원', '서대문')"),
-  provinceCode: z
-    .string()
+  provinceCode: regionCodeSchema
     .optional()
     .describe("광역시도 코드 (11=서울, 21=부산, 31=경기 등)로 필터링"),
   limit: z
@@ -245,36 +267,33 @@ export const searchDetailedRegionCodesSchema = z.object({
 
 // 도서관별 장서/대출 데이터 조회 스키마
 export const searchItemsSchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
   type: z.enum(["ALL"]).optional().describe("검색조건 (ALL=전체 데이터)"),
-  isbn13: z.string().optional().describe("13자리 ISBN"),
-  startDt: z
-    .string()
+  isbn13: isbn13Schema.optional().describe("13자리 ISBN"),
+  startDt: dateSchema
     .optional()
     .describe("검색시작일자 (도서 등록일) - YYYY-MM-DD 형식"),
-  endDt: z
-    .string()
+  endDt: dateSchema
     .optional()
     .describe("검색종료일자 (도서 등록일) - YYYY-MM-DD 형식"),
-  pageNo: z.number().optional().describe("페이지번호"),
-  pageSize: z.number().optional().describe("페이지크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지크기 (최대 1000)"),
 });
 
 // 마니아 추천도서 조회 스키마
 export const getManiaRecommendationsSchema = z.object({
-  isbn13: z.string().describe("10자리 또는 13자리 ISBN"),
+  isbn13: isbnListSchema.describe("10자리 또는 13자리 ISBN. 여러 권은 세미콜론으로 구분"),
 });
 
 // 다독자 추천도서 조회 스키마
 export const getReaderRecommendationsSchema = z.object({
-  isbn13: z.string().describe("10자리 또는 13자리 ISBN"),
+  isbn13: isbnListSchema.describe("10자리 또는 13자리 ISBN. 여러 권은 세미콜론으로 구분"),
 });
 
 // 도서 키워드 목록 스키마
 export const getBookKeywordsSchema = z.object({
-  isbn13: z.string().describe("13자리 ISBN"),
+  isbn13: isbn13Schema.describe("13자리 ISBN"),
   additionalYN: z
     .enum(["Y", "N"])
     .optional()
@@ -283,90 +302,79 @@ export const getBookKeywordsSchema = z.object({
 
 // 도서별 이용 분석 스키마
 export const getBookUsageAnalysisSchema = z.object({
-  isbn13: z.string().describe("13자리 ISBN"),
+  isbn13: isbn10Or13Schema.describe("10자리 또는 13자리 ISBN"),
 });
 
 // 도서관/지역별 인기대출 도서 조회 스키마
 export const searchPopularBooksByLibrarySchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .optional()
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
-  region: z
-    .string()
+  region: regionCodeSchema
     .optional()
     .describe(
       "지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
-  dtl_region: z
-    .string()
+  dtl_region: detailedRegionCodeSchema
     .optional()
     .describe("세부지역코드 - search_detailed_region_codes 도구로 검색하세요"),
-  startDt: z
-    .string()
+  startDt: dateSchema
     .optional()
     .describe("검색시작일자 (대출기간) - YYYY-MM-DD 형식"),
-  endDt: z
-    .string()
+  endDt: dateSchema
     .optional()
     .describe("검색종료일자 (대출기간) - YYYY-MM-DD 형식"),
-  gender: z.string().optional().describe("성별코드 (0=남성, 1=여성, 2=미상)"),
-  from_age: z.number().optional().describe("시작연령"),
-  to_age: z.number().optional().describe("종료연령"),
+  gender: z.enum(["0", "1", "2"]).optional().describe("성별코드 (0=남성, 1=여성, 2=미상)"),
+  from_age: z.number().int().min(0).max(120).optional().describe("시작연령"),
+  to_age: z.number().int().min(0).max(120).optional().describe("종료연령"),
   age: z
-    .string()
+    .enum(["0", "6", "8", "14", "20", "30", "40", "50", "60", "a8", "a10", "a12", "a14", "a17"])
     .optional()
     .describe(
-      "연령코드 (0=영유아, 6=유아, 8=초등, 14=청소년, 20=20대, 30=30대, 40=40대, 50=50대, 60=60세이상)"
+      "연령코드 (0=영유아, 6=유아, 8=초등, 14=청소년, 20~60=연령대, a8/a10/a12=초등 학년군, a14=중등, a17=고등)"
     ),
   addCode: z
-    .string()
+    .enum(["0", "1", "2", "4", "5", "6", "7", "9"])
     .optional()
     .describe(
       "ISBN부가기호 (0=교양, 1=실용, 2=여성, 4=청소년, 5=학습참고서(중고), 6=학습참고서(초등), 7=아동, 9=전문)"
     ),
-  kdc: z
-    .string()
+  kdc: kdcCodeSchema
     .optional()
     .describe(
       "대주제분류 (0=총류, 1=철학, 2=종교, 3=사회과학, 4=자연과학, 5=기술과학, 6=예술, 7=언어, 8=문학, 9=역사)"
     ),
-  dtl_kdc: z
-    .string()
+  dtl_kdc: detailedKdcCodeSchema
     .optional()
     .describe("세부주제코드 - search_detailed_kdc_codes 도구로 검색하세요"),
   book_dvsn: z
     .enum(["big", "oversea"])
     .optional()
     .describe("도서구분 (big=큰글씨도서, oversea=국외도서)"),
-  pageNo: z.number().optional().describe("페이지번호"),
-  pageSize: z.number().optional().describe("페이지크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지크기 (최대 1000)"),
 });
 
 // 도서관별 통합정보 스키마
 export const getLibraryInfoSchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .optional()
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
-  region: z
-    .string()
+  region: regionCodeSchema
     .optional()
     .describe(
       "지역코드 (11=서울, 21=부산, 22=대구, 23=인천, 24=광주, 25=대전, 26=울산, 29=세종, 31=경기, 32=강원, 33=충북, 34=충남, 35=전북, 36=전남, 37=경북, 38=경남, 39=제주)"
     ),
-  dtl_region: z
-    .string()
+  dtl_region: detailedRegionCodeSchema
     .optional()
     .describe("세부지역코드 - search_detailed_region_codes 도구로 검색하세요"),
-  pageNo: z.number().optional().describe("페이지번호"),
-  pageSize: z.number().optional().describe("페이지크기"),
+  pageNo: pageNumberSchema.optional().describe("페이지번호"),
+  pageSize: pageSizeSchema.optional().describe("페이지크기 (최대 1000)"),
 });
 
 // 도서관별 인기대출도서 통합 스키마
 export const getPopularBooksByLibrarySchema = z.object({
-  libCode: z
-    .string()
+  libCode: libraryCodeSchema
     .describe("도서관코드 - search_library_codes 도구로 검색하세요"),
 });
 
